@@ -1,0 +1,80 @@
+[
+  {
+    "directory": "/home/bbarrow/Projects/LibPeer-Vala",
+    "command": "valac -C --debug --debug --vapidir /home/bbarrow/Projects/LibPeer-Vala/src/vapi /home/bbarrow/Projects/LibPeer-Vala/src/vapi/uuid.vapi --pkg posix --pkg gee-0.8 --pkg gio-2.0 --pkg gobject-2.0 --pkg glib-2.0 --color=always --directory hlpced.p --basedir src/ src/Daemon.vala src/Networks/Advertisement.vala src/Networks/Network.vala src/Networks/PeerInfo.vala src/Networks/UnknownPeerInfo.vala src/Networks/Receiption.vala src/Networks/Simulation/NetSimPeerInfo.vala src/Networks/Simulation/Conduit.vala src/Networks/Simulation/NetSim.vala src/Networks/Simulation/Packet.vala src/Protocols/MX2/InstanceReference.vala src/Util/QueueCommand.vala",
+    "file": "src/Daemon.vala",
+    "output": "hlpced.p/Daemon.c"
+  },
+  {
+    "directory": "/home/bbarrow/Projects/LibPeer-Vala",
+    "command": "cc -Ihlpced.p -I. -Isrc -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/gee-0.8 -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -w -g -pthread -MD -MQ hlpced.p/meson-generated_Daemon.c.o -MF hlpced.p/meson-generated_Daemon.c.o.d -o hlpced.p/meson-generated_Daemon.c.o -c hlpced.p/Daemon.c",
+    "file": "hlpced.p/Daemon.c",
+    "output": "hlpced.p/meson-generated_Daemon.c.o"
+  },
+  {
+    "directory": "/home/bbarrow/Projects/LibPeer-Vala",
+    "command": "cc -Ihlpced.p -I. -Isrc -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/gee-0.8 -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -w -g -pthread -MD -MQ hlpced.p/meson-generated_Networks_Advertisement.c.o -MF hlpced.p/meson-generated_Networks_Advertisement.c.o.d -o hlpced.p/meson-generated_Networks_Advertisement.c.o -c hlpced.p/Networks/Advertisement.c",
+    "file": "hlpced.p/Networks/Advertisement.c",
+    "output": "hlpced.p/meson-generated_Networks_Advertisement.c.o"
+  },
+  {
+    "directory": "/home/bbarrow/Projects/LibPeer-Vala",
+    "command": "cc -Ihlpced.p -I. -Isrc -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/gee-0.8 -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -w -g -pthread -MD -MQ hlpced.p/meson-generated_Networks_Network.c.o -MF hlpced.p/meson-generated_Networks_Network.c.o.d -o hlpced.p/meson-generated_Networks_Network.c.o -c hlpced.p/Networks/Network.c",
+    "file": "hlpced.p/Networks/Network.c",
+    "output": "hlpced.p/meson-generated_Networks_Network.c.o"
+  },
+  {
+    "directory": "/home/bbarrow/Projects/LibPeer-Vala",
+    "command": "cc -Ihlpced.p -I. -Isrc -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/gee-0.8 -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -w -g -pthread -MD -MQ hlpced.p/meson-generated_Networks_PeerInfo.c.o -MF hlpced.p/meson-generated_Networks_PeerInfo.c.o.d -o hlpced.p/meson-generated_Networks_PeerInfo.c.o -c hlpced.p/Networks/PeerInfo.c",
+    "file": "hlpced.p/Networks/PeerInfo.c",
+    "output": "hlpced.p/meson-generated_Networks_PeerInfo.c.o"
+  },
+  {
+    "directory": "/home/bbarrow/Projects/LibPeer-Vala",
+    "command": "cc -Ihlpced.p -I. -Isrc -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/gee-0.8 -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -w -g -pthread -MD -MQ hlpced.p/meson-generated_Networks_UnknownPeerInfo.c.o -MF hlpced.p/meson-generated_Networks_UnknownPeerInfo.c.o.d -o hlpced.p/meson-generated_Networks_UnknownPeerInfo.c.o -c hlpced.p/Networks/UnknownPeerInfo.c",
+    "file": "hlpced.p/Networks/UnknownPeerInfo.c",
+    "output": "hlpced.p/meson-generated_Networks_UnknownPeerInfo.c.o"
+  },
+  {
+    "directory": "/home/bbarrow/Projects/LibPeer-Vala",
+    "command": "cc -Ihlpced.p -I. -Isrc -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/gee-0.8 -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -w -g -pthread -MD -MQ hlpced.p/meson-generated_Networks_Receiption.c.o -MF hlpced.p/meson-generated_Networks_Receiption.c.o.d -o hlpced.p/meson-generated_Networks_Receiption.c.o -c hlpced.p/Networks/Receiption.c",
+    "file": "hlpced.p/Networks/Receiption.c",
+    "output": "hlpced.p/meson-generated_Networks_Receiption.c.o"
+  },
+  {
+    "directory": "/home/bbarrow/Projects/LibPeer-Vala",
+    "command": "cc -Ihlpced.p -I. -Isrc -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/gee-0.8 -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -w -g -pthread -MD -MQ hlpced.p/meson-generated_Networks_Simulation_NetSimPeerInfo.c.o -MF hlpced.p/meson-generated_Networks_Simulation_NetSimPeerInfo.c.o.d -o hlpced.p/meson-generated_Networks_Simulation_NetSimPeerInfo.c.o -c hlpced.p/Networks/Simulation/NetSimPeerInfo.c",
+    "file": "hlpced.p/Networks/Simulation/NetSimPeerInfo.c",
+    "output": "hlpced.p/meson-generated_Networks_Simulation_NetSimPeerInfo.c.o"
+  },
+  {
+    "directory": "/home/bbarrow/Projects/LibPeer-Vala",
+    "command": "cc -Ihlpced.p -I. -Isrc -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/gee-0.8 -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -w -g -pthread -MD -MQ hlpced.p/meson-generated_Networks_Simulation_Conduit.c.o -MF hlpced.p/meson-generated_Networks_Simulation_Conduit.c.o.d -o hlpced.p/meson-generated_Networks_Simulation_Conduit.c.o -c hlpced.p/Networks/Simulation/Conduit.c",
+    "file": "hlpced.p/Networks/Simulation/Conduit.c",
+    "output": "hlpced.p/meson-generated_Networks_Simulation_Conduit.c.o"
+  },
+  {
+    "directory": "/home/bbarrow/Projects/LibPeer-Vala",
+    "command": "cc -Ihlpced.p -I. -Isrc -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/gee-0.8 -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -w -g -pthread -MD -MQ hlpced.p/meson-generated_Networks_Simulation_NetSim.c.o -MF hlpced.p/meson-generated_Networks_Simulation_NetSim.c.o.d -o hlpced.p/meson-generated_Networks_Simulation_NetSim.c.o -c hlpced.p/Networks/Simulation/NetSim.c",
+    "file": "hlpced.p/Networks/Simulation/NetSim.c",
+    "output": "hlpced.p/meson-generated_Networks_Simulation_NetSim.c.o"
+  },
+  {
+    "directory": "/home/bbarrow/Projects/LibPeer-Vala",
+    "command": "cc -Ihlpced.p -I. -Isrc -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/gee-0.8 -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -w -g -pthread -MD -MQ hlpced.p/meson-generated_Networks_Simulation_Packet.c.o -MF hlpced.p/meson-generated_Networks_Simulation_Packet.c.o.d -o hlpced.p/meson-generated_Networks_Simulation_Packet.c.o -c hlpced.p/Networks/Simulation/Packet.c",
+    "file": "hlpced.p/Networks/Simulation/Packet.c",
+    "output": "hlpced.p/meson-generated_Networks_Simulation_Packet.c.o"
+  },
+  {
+    "directory": "/home/bbarrow/Projects/LibPeer-Vala",
+    "command": "cc -Ihlpced.p -I. -Isrc -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/gee-0.8 -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -w -g -pthread -MD -MQ hlpced.p/meson-generated_Protocols_MX2_InstanceReference.c.o -MF hlpced.p/meson-generated_Protocols_MX2_InstanceReference.c.o.d -o hlpced.p/meson-generated_Protocols_MX2_InstanceReference.c.o -c hlpced.p/Protocols/MX2/InstanceReference.c",
+    "file": "hlpced.p/Protocols/MX2/InstanceReference.c",
+    "output": "hlpced.p/meson-generated_Protocols_MX2_InstanceReference.c.o"
+  },
+  {
+    "directory": "/home/bbarrow/Projects/LibPeer-Vala",
+    "command": "cc -Ihlpced.p -I. -Isrc -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/gee-0.8 -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -w -g -pthread -MD -MQ hlpced.p/meson-generated_Util_QueueCommand.c.o -MF hlpced.p/meson-generated_Util_QueueCommand.c.o.d -o hlpced.p/meson-generated_Util_QueueCommand.c.o -c hlpced.p/Util/QueueCommand.c",
+    "file": "hlpced.p/Util/QueueCommand.c",
+    "output": "hlpced.p/meson-generated_Util_QueueCommand.c.o"
+  }
+]
