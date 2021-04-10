@@ -1,7 +1,7 @@
 
 namespace LibPeer.Networks.Simulation {
 
-    class Packet {
+    public class Packet {
         public Bytes data;
 
         public NetSimPeerInfo peer_info;

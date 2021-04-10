@@ -4,7 +4,7 @@ using Gee;
 
 namespace LibPeer.Networks.Simulation {
 
-    class Conduit {
+    public class Conduit {
 
         private HashMap<Bytes, NetSim> interfaces = new HashMap<Bytes, NetSim>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 

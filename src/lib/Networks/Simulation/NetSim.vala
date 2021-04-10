@@ -4,7 +4,7 @@ using LibPeer.Util;
 
 namespace LibPeer.Networks.Simulation {
 
-    class NetSim : Network {
+    public class NetSim : Network {
 
         private Conduit conduit;
         private int count;

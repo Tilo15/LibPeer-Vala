@@ -1,5 +1,11 @@
-builddir
-hlpced.p
-meson-info
-meson-logs
-meson-private
+/builddir
+*.p
+/lib
+/toys
+/meson-info
+/meson-logs
+/meson-private
+/.ninja_deps
+/.ninja_log
+/build.ninja
+/compile_commands.json

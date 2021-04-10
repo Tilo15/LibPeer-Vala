@@ -3,7 +3,7 @@ using LibPeer.Networks;
 
 namespace LibPeer.Networks.Simulation {
 
-    class NetSimPeerInfo : PeerInfo {
+    public class NetSimPeerInfo : PeerInfo {
 
         private const int IDENTIFIER_SIZE = 16;
 
