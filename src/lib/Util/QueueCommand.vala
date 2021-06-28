@@ -1,11 +1,11 @@
 namespace LibPeer.Util {
 
-    public enum QueueControl {
+    internal enum QueueControl {
         Payload,
         Stop,
     }
 
-    public class QueueCommand<T> {
+    internal class QueueCommand<T> {
 
         public T payload;
 

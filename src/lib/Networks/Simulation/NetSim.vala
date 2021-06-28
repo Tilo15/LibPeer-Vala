@@ -79,9 +79,9 @@ namespace LibPeer.Networks.Simulation {
             conduit.advertise(identifier, advertisement);
         }
     
-        public override void send(Bytes bytes, PeerInfo peer_info) throws IOError, Error {
+        public override void send(uint8[] bytes, PeerInfo peer_info) throws IOError, Error {
             NetSimPeerInfo info = (NetSimPeerInfo)peer_info;
-            conduit.send_packet(this.identifier, new Bytes(info.identifier), bytes);
+            conduit.send_packet(this.identifier, new Bytes(info.identifier), new Bytes(bytes));
         }
 
         internal void receive_data(Bytes origin, Bytes data) {
@@ -90,6 +90,8 @@ namespace LibPeer.Networks.Simulation {
 
             // Create the packet
             var packet = new Packet(peer_info, data);
+
+            print(@"NET: $(data.get(0)) $(data.get(1)) $(data.get(2))\n");
 
             // Add packet to queue
             packet_queue.push(new QueueCommand<Packet>.with_payload(packet));

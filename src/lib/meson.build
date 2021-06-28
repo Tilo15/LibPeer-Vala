@@ -9,7 +9,9 @@ dependencies = [
     dependency('gee-0.8'),
     meson.get_compiler('vala').find_library('posix'),
     meson.get_compiler('vala').find_library('uuid', dirs: vapi_dir),
-    meson.get_compiler('c').find_library('uuid')
+    meson.get_compiler('c').find_library('uuid'),
+    meson.get_compiler('vala').find_library('libsodium', dirs: vapi_dir),
+    meson.get_compiler('c').find_library('sodium')
 ]
 
 sources = files('Networks/Advertisement.vala')
@@ -21,8 +23,18 @@ sources += files('Networks/Simulation/NetSimPeerInfo.vala')
 sources += files('Networks/Simulation/Conduit.vala')
 sources += files('Networks/Simulation/NetSim.vala')
 sources += files('Networks/Simulation/Packet.vala')
+sources += files('Protocols/MX2/Muxer.vala')
+sources += files('Protocols/MX2/Frame.vala')
+sources += files('Protocols/MX2/Inquiry.vala')
+sources += files('Protocols/MX2/Instance.vala')
+sources += files('Protocols/MX2/InstanceAccessInfo.vala')
 sources += files('Protocols/MX2/InstanceReference.vala')
+sources += files('Protocols/MX2/Packet.vala')
+sources += files('Protocols/MX2/PathInfo.vala')
+sources += files('Protocols/MX2/PathStrategy.vala')
+sources += files('Util/ByteComposer.vala')
 sources += files('Util/QueueCommand.vala')
+sources += files('Util/ThreadTimer.vala')
 
 libpeer = library('peer', sources, dependencies: dependencies)
 libpeer_dep = declare_dependency(link_with: libpeer, include_directories: include_directories('.'))
