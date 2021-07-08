@@ -2,7 +2,7 @@ using LibPeer.Networks;
 
 namespace LibPeer.Protocols.Mx2 {
 
-    internal struct InstanceAccessInfo {
+    internal class InstanceAccessInfo {
 
         public Network network;
 

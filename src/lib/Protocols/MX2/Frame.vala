@@ -46,13 +46,11 @@ namespace LibPeer.Protocols.Mx2 {
             // Encrypt the signed payload
             uint8[] encrypted_signed_payload = Asymmetric.Sealing.seal(signed_payload, destination.public_key);
 
-            print(@"TX_PAYLOAD: $(new ByteComposer().add_byte_array(payload).to_string())\n");
-
             // Write the signed and encrypted payload
             stream.write(encrypted_signed_payload);
         }
 
-        public Frame.from_stream(InputStream stream, HashMap<InstanceReference, Instance> instances) throws IOError, Error{
+        public Frame.from_stream(InputStream stream, ConcurrentHashMap<InstanceReference, Instance> instances) throws IOError, Error{
             // Read the magic number
             uint8[] magic = new uint8[3];
             stream.read(magic);
@@ -93,8 +91,6 @@ namespace LibPeer.Protocols.Mx2 {
 
             // Verify the signature and get plaintext message
             uint8[]? payload = Asymmetric.Signing.verify(signed_payload, origin.verification_key);
-                                
-            print(@"RX_PAYLOAD: $(new ByteComposer().add_byte_array(payload).to_string())\n");
 
             if (payload == null) {
                 throw new IOError.FAILED("Payload signature is invalid");

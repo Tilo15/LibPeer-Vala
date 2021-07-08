@@ -6,11 +6,12 @@ namespace ExponentialPinger {
 
         public static int main(string[] args) {
             print("Exponential Pinger\n");
+            int count = int.parse(args[1]);
 
             Conduit conduit = new Conduit();
 
-            Pinger[] pingas = new Pinger[10];
-            for (int i = 0; i < 10; i++){
+            Pinger[] pingas = new Pinger[count];
+            for (int i = 0; i < count; i++){
                 pingas[i] = new Pinger(conduit);
             }
 

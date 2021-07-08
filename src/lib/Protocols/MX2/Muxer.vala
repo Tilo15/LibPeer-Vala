@@ -13,15 +13,17 @@ namespace LibPeer.Protocols.Mx2 {
 
         private const int FALLBACK_PING_VALUE = 120000;
         
-        private HashMap<Bytes, HashSet<Network>> networks = new HashMap<Bytes, HashSet<Network>>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+        private ConcurrentHashMap<Bytes, HashSet<Network>> networks = new ConcurrentHashMap<Bytes, HashSet<Network>>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 
-        private HashMap<InstanceReference, Instance> instances = new HashMap<InstanceReference, Instance>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+        private ConcurrentHashMap<InstanceReference, Instance> instances = new ConcurrentHashMap<InstanceReference, Instance>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 
-        private HashMap<InstanceReference, InstanceAccessInfo?> remote_instance_mapping = new HashMap<InstanceReference, InstanceAccessInfo>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+        private ConcurrentHashMap<InstanceReference, InstanceAccessInfo> remote_instance_mapping = new ConcurrentHashMap<InstanceReference, InstanceAccessInfo>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 
-        private HashMap<Bytes, Inquiry> inquiries = new HashMap<Bytes, Inquiry>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+        private ConcurrentHashMap<Bytes, Inquiry> inquiries = new ConcurrentHashMap<Bytes, Inquiry>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 
-        private HashMap<InstanceReference, int> pings = new HashMap<InstanceReference, int>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+        private ConcurrentHashMap<InstanceReference, int> pings = new ConcurrentHashMap<InstanceReference, int>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+
+
 
         
         public void register_network(Network network) {
@@ -188,12 +190,10 @@ namespace LibPeer.Protocols.Mx2 {
                 .add_byte_array(frame.payload[17:frame.payload.length])
                 .to_string();
 
-            print(@"NAMESPACE: $(application_namespace)\n");
-
             // Does the application namespace match the instance's
             if (instance.application_namespace == application_namespace) {
                 // Yes, save this instance's information locally for use later
-                remote_instance_mapping.set(frame.origin, InstanceAccessInfo() { 
+                remote_instance_mapping.set(frame.origin, new InstanceAccessInfo() { 
                     network = receiption.network,
                     peer_info = receiption.peer_info,
                     path_info = frame.via.return_path
@@ -216,7 +216,7 @@ namespace LibPeer.Protocols.Mx2 {
             // Have we received one from this instance before?
             if (!remote_instance_mapping.has_key(frame.origin)) {
                 // No, this is the first (and therefore least latent) method of reaching this instance
-                remote_instance_mapping.set(frame.origin, InstanceAccessInfo() { 
+                remote_instance_mapping.set(frame.origin, new InstanceAccessInfo() { 
                     network = receiption.network,
                     peer_info = receiption.peer_info,
                     path_info = frame.via.return_path

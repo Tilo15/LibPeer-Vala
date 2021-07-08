@@ -49,7 +49,7 @@
      private void key_gen([CCode (array_length = false)]uint8[] key);
  
      public uint8[] generate_key() {
-       uint8[KEY_BYTES] key = new uint8[KEY_BYTES];
+       uint8[] key = new uint8[KEY_BYTES];
        key_gen(key);
        return key;
      }
@@ -68,7 +68,7 @@
      {
        // Initialise array for ciphertext
        size_t ciphertext_size = MAC_BYTES + message.length;
-       uint8[ciphertext_size] ciphertext = new uint8[ciphertext_size];
+       uint8[] ciphertext = new uint8[ciphertext_size];
  
        // Encrypt
        secretbox(ciphertext, message, nonce, key);
@@ -92,7 +92,7 @@
      {
        // Initialise array for message
        size_t message_size = ciphertext.length - MAC_BYTES;
-       uint8[message_size] message = new uint8[message_size];
+       uint8[] message = new uint8[message_size];
  
        // Decrypt
        int status = secretbox_open(message, ciphertext, nonce, key);

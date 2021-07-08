@@ -91,7 +91,7 @@ namespace LibPeer.Networks.Simulation {
             // Create the packet
             var packet = new Packet(peer_info, data);
 
-            print(@"NET: $(data.get(0)) $(data.get(1)) $(data.get(2))\n");
+            //  print(@"NET: $(origin.get(0)) $(origin.get(1)) $(origin.get(2)) to $(identifier.get(0)) $(identifier.get(1)) $(identifier.get(2))\n");
 
             // Add packet to queue
             packet_queue.push(new QueueCommand<Packet>.with_payload(packet));

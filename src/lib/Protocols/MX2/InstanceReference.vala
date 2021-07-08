@@ -3,8 +3,8 @@ namespace LibPeer.Protocols.Mx2 {
 
     public class InstanceReference {
 
-        public uint8[] verification_key { get; protected set; }
-        public uint8[] public_key { get; protected set; }
+        public uint8[] verification_key { get; private set; }
+        public uint8[] public_key { get; private set; }
 
         public InstanceReference(uint8[] verification_key, uint8[] public_key) 
         requires (verification_key.length == 32)
@@ -16,7 +16,7 @@ namespace LibPeer.Protocols.Mx2 {
 
         public InstanceReference.from_stream(InputStream stream) throws IOError {
             verification_key = new uint8[32];
-            stream.read(verification_key);
+            stream.read(_verification_key);
 
             public_key = new uint8[32];
             stream.read(public_key);
@@ -28,9 +28,10 @@ namespace LibPeer.Protocols.Mx2 {
         }
 
         private Bytes combined_bytes () {
-            uint8[] combined = new uint8[64];
-            MemoryOutputStream stream = new MemoryOutputStream(combined);
-            serialise(stream);
+            uint8[] combined = new Util.ByteComposer()
+                .add_byte_array(verification_key)
+                .add_byte_array(public_key)
+                .to_byte_array();
             return new Bytes(combined);
         }
 

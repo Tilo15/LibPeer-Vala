@@ -11,7 +11,7 @@ namespace ExponentialPinger {
         private Muxer muxer = new Muxer();
         private Network network;
         private Instance instance;
-        private HashSet<InstanceReference> peers = new HashSet<InstanceReference>((m) => m.hash(), (a, b) => a.compare(b) == 0);
+        private ConcurrentSet<InstanceReference> peers = new ConcurrentSet<InstanceReference>((a, b) => a.compare(b));
 
         public Pinger(Conduit conduit) throws Error, IOError {
             network = conduit.get_interface();
@@ -28,28 +28,22 @@ namespace ExponentialPinger {
         }
 
         private void rx_advertisement(Advertisement adv) throws Error, IOError {
-            lock (peers) {
-                if(!peers.contains(adv.instance_reference)) {
-                    var peer_info = new GLib.List<PeerInfo>();
-                    peer_info.append(adv.peer_info);
-                    muxer.inquire(instance, adv.instance_reference, peer_info);
-                }
+            if(!peers.contains(adv.instance_reference)) {
+                var peer_info = new GLib.List<PeerInfo>();
+                peer_info.append(adv.peer_info);
+                muxer.inquire(instance, adv.instance_reference, peer_info);
             }
         }
 
         private void rx_greeting(InstanceReference origin) throws Error, IOError {
-            lock (peers) {
-                peers.add(origin);
-            }
+            peers.add(origin);
             muxer.send(instance, origin, "Hello World!".data);
         }
 
         private void rx_data(Packet packet) throws Error, IOError {
-            lock (peers) {
-                peers.add(packet.origin);
-                network.advertise(instance.reference);
-                print(@"RX DATA, I have $(peers.size) peers\n");
-            }
+            peers.add(packet.origin);
+            network.advertise(instance.reference);
+            print(@"RX DATA, I have $(peers.size) peers\n");
 
             uint8[] data = new uint8[13];
             packet.stream.read(data);

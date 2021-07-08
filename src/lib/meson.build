@@ -35,6 +35,7 @@ sources += files('Protocols/MX2/PathStrategy.vala')
 sources += files('Util/ByteComposer.vala')
 sources += files('Util/QueueCommand.vala')
 sources += files('Util/ThreadTimer.vala')
+sources += files('Util/ConcurrentHashMap.vala')
 
 libpeer = library('peer', sources, dependencies: dependencies)
 libpeer_dep = declare_dependency(link_with: libpeer, include_directories: include_directories('.'))

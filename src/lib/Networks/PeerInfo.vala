@@ -1,12 +1,13 @@
 using GLib;
 using Gee;
+using LibPeer.Util;
 
 namespace LibPeer.Networks
 {
     
     public abstract class PeerInfo {
 
-        private static HashMap<Bytes, Type> info_types = new HashMap<Bytes, Type>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+        private static ConcurrentHashMap<Bytes, Type> info_types = new ConcurrentHashMap<Bytes, Type>((a) => a.hash(), (a, b) => a.compare(b) == 0);
         
         protected abstract void build(uint8 data_length, InputStream stream) throws IOError, Error;
         

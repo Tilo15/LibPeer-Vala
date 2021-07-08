@@ -1,4 +1,5 @@
 using LibPeer.Networks;
+using LibPeer.Util;
 
 using Gee;
 
@@ -6,7 +7,7 @@ namespace LibPeer.Networks.Simulation {
 
     public class Conduit {
 
-        private HashMap<Bytes, NetSim> interfaces = new HashMap<Bytes, NetSim>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+        private ConcurrentHashMap<Bytes, NetSim> interfaces = new ConcurrentHashMap<Bytes, NetSim>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 
         private int count = 0;
 
