@@ -11,7 +11,8 @@ dependencies = [
     meson.get_compiler('vala').find_library('uuid', dirs: vapi_dir),
     meson.get_compiler('c').find_library('uuid'),
     meson.get_compiler('vala').find_library('libsodium', dirs: vapi_dir),
-    meson.get_compiler('c').find_library('sodium')
+    meson.get_compiler('c').find_library('sodium'),
+    meson.get_compiler('c').find_library('m')
 ]
 
 sources = files('Networks/Advertisement.vala')
@@ -32,6 +33,24 @@ sources += files('Protocols/MX2/InstanceReference.vala')
 sources += files('Protocols/MX2/Packet.vala')
 sources += files('Protocols/MX2/PathInfo.vala')
 sources += files('Protocols/MX2/PathStrategy.vala')
+sources += files('Protocols/STP/StreamTransmissionProtocol.vala')
+sources += files('Protocols/STP/Negotiation.vala')
+sources += files('Protocols/STP/Retransmitter.vala')
+sources += files('Protocols/STP/Sessions/Session.vala')
+sources += files('Protocols/STP/Sessions/IngressSession.vala')
+sources += files('Protocols/STP/Sessions/EgressSession.vala')
+sources += files('Protocols/STP/Sessions/SegmentTracker.vala')
+sources += files('Protocols/STP/Segments/Segment.vala')
+sources += files('Protocols/STP/Segments/Acknowledgement.vala')
+sources += files('Protocols/STP/Segments/Control.vala')
+sources += files('Protocols/STP/Segments/Payload.vala')
+sources += files('Protocols/STP/Messages/Message.vala')
+sources += files('Protocols/STP/Messages/BeginSession.vala')
+sources += files('Protocols/STP/Messages/NegotiateSession.vala')
+sources += files('Protocols/STP/Messages/RequestSession.vala')
+sources += files('Protocols/STP/Messages/SegmentMessage.vala')
+sources += files('Protocols/STP/Streams/InputStream.vala')
+sources += files('Protocols/STP/Streams/OutputStream.vala')
 sources += files('Util/ByteComposer.vala')
 sources += files('Util/QueueCommand.vala')
 sources += files('Util/ThreadTimer.vala')

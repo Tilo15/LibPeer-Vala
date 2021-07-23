@@ -58,9 +58,7 @@ namespace LibPeer.Util {
 		 * {@inheritDoc}
 		 */
 		public override Gee.MapIterator<K,V> map_iterator () {
-            lock(_map) {
-                return copy().map_iterator();
-            }
+            return copy().map_iterator();
         }
 
 		/**
@@ -83,17 +81,13 @@ namespace LibPeer.Util {
 		 * {@inheritDoc}
 		 */
 		public override Gee.Set<Gee.Map.Entry<K,V>> entries { owned get {
-            lock(_map) {
-                return copy().entries;
-            }
+            return copy().entries;
         } }
 		/**
 		 * {@inheritDoc}
 		 */
 		public override Gee.Set<K> keys { owned get {
-            lock(_map) {
-                return copy().keys;
-            }
+            return copy().keys;
         } }
 		/**
 		 * {@inheritDoc}
@@ -115,9 +109,7 @@ namespace LibPeer.Util {
 		 * {@inheritDoc}
 		 */
 		public override Gee.Collection<V> values { owned get {
-            lock(_map) {
-                return copy().values;
-            }
+            return copy().values;
         } }
 
     }
