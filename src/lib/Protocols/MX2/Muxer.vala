@@ -23,9 +23,6 @@ namespace LibPeer.Protocols.Mx2 {
 
         private ConcurrentHashMap<InstanceReference, int> pings = new ConcurrentHashMap<InstanceReference, int>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 
-
-
-        
         public void register_network(Network network) {
             // Get the network identifier
             Bytes network_identifier = network.get_network_identifier();
