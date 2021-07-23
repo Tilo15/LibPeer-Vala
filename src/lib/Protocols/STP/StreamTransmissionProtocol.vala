@@ -32,6 +32,33 @@ namespace LibPeer.Protocols.Stp {
             send_thread = new Thread<void>("STP Network Send Thread", send_loop);
         }
 
+        public Negotiation initialise_stream(InstanceReference target, uint8[] in_reply_to = EMPTY_REPLY_TO) {
+            // Initiate a stream with another peer
+            var session_id = new uint8[16];
+            UUID.generate_random(session_id);
+
+            // Start the negotiation
+            var negotiation = new Negotiation() {
+                session_id = new Bytes(session_id),
+                in_reply_to = new Bytes(in_reply_to),
+                feature_codes = {},
+                state = NegotiationState.REQUESTED,
+                remote_instance = target,
+                direction = SessionDirection.EGRESS
+            };
+            negotiations.set(negotiation.session_id, negotiation);
+
+            // Create the session request
+            var session_request = new RequestSession(negotiation.session_id, negotiation.in_reply_to, negotiation.feature_codes);
+
+            // Send the request
+            negotiation.request_retransmitter = new Retransmitter(10000, 12, i => this.send_packet(negotiation.remote_instance, s => session_request.serialise(s)));
+            retransmitters.add(negotiation.request_retransmitter);
+
+            // Return the negotiation object
+            return negotiation;
+        }
+
         private void handle_packet(Packet packet) {
             // We have a message, deserialise it
             var message = Message.deserialise(packet.stream);
@@ -81,7 +108,7 @@ namespace LibPeer.Protocols.Stp {
             var reply = new NegotiateSession(negotiation.session_id, {}, message.timing);
 
             // Repeatedly send the negotiation
-            negotiation.negotiate_retransmitter = new Retransmitter(10000, 12, i => send_packet(negotiation.remote_instance, s => reply.serialise(s)));
+            negotiation.negotiate_retransmitter = new Retransmitter(10000, 12, i => this.send_packet(negotiation.remote_instance, s => reply.serialise(s)));
             retransmitters.add(negotiation.negotiate_retransmitter);
         }
 
@@ -103,7 +130,7 @@ namespace LibPeer.Protocols.Stp {
             }
 
             // Set the ping value
-            negotiation.ping = get_monotonic_time() - message.reply_timing;
+            negotiation.ping = (get_monotonic_time()/1000) - message.reply_timing;
 
             // TODO features
 
@@ -152,7 +179,7 @@ namespace LibPeer.Protocols.Stp {
             negotiation.state = NegotiationState.ACCEPTED;
 
             // Set the ping value
-            negotiation.ping = get_monotonic_time() - message.reply_timing;
+            negotiation.ping = (get_monotonic_time()/1000) - message.reply_timing;
 
             // Setup the session
             setup_session(negotiation);
@@ -226,7 +253,7 @@ namespace LibPeer.Protocols.Stp {
             
         }
 
-        public void send_loop() {
+        private void send_loop() {
             // TODO: add a way to stop this
             while(true) {
                 foreach(var session in sessions.values) {
@@ -243,7 +270,7 @@ namespace LibPeer.Protocols.Stp {
             }
         }
 
-        public void notify_app(ThreadFunc<void> func) {
+        private void notify_app(ThreadFunc<void> func) {
             new Thread<void>("Application notification thread", func);
         }
     }

@@ -18,7 +18,7 @@ namespace LibPeer.Protocols.Stp {
                 return false;
             }
 
-            if(last_called < get_monotonic_time() - interval) {
+            if(last_called < get_monotonic_time() - interval*1000) {
                 ttl--;
                 action(ttl);
                 last_called = get_monotonic_time();

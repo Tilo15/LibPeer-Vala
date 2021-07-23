@@ -32,7 +32,7 @@ namespace LibPeer.Protocols.Stp.Segments {
         }
 
         public void reset_timing() {
-            timing = get_monotonic_time();
+            timing = get_monotonic_time()/1000;
         }
 
         public Payload(uint64 sequence_number, uint8[] data) {

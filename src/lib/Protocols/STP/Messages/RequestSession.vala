@@ -12,6 +12,12 @@ namespace LibPeer.Protocols.Stp.Messages {
 
         public uint64 timing { get; private set; }
 
+        public RequestSession(Bytes id, Bytes reply, uint8[] features) {
+            session_id = id;
+            in_reply_to = reply;
+            feature_codes = features;
+        }
+
         protected override void serialise_data (OutputStream stream) {
             DataOutputStream os = new DataOutputStream (stream);
             os.byte_order = DataStreamByteOrder.BIG_ENDIAN;

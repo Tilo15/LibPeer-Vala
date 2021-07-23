@@ -5,24 +5,24 @@ using Gee;
 
 namespace LibPeer.Protocols.Stp {
 
-    internal class Negotiation {
-        public Bytes session_id { get; set; }
+    public class Negotiation {
+        public Bytes session_id { get; internal set; }
 
-        public Bytes in_reply_to { get; set; }
+        public Bytes in_reply_to { get; internal set; }
 
         public uint8[] feature_codes { get; set; }
 
-        public NegotiationState state { get; set; }
+        public NegotiationState state { get; internal set; }
 
-        public InstanceReference remote_instance { get; set; }
+        public InstanceReference remote_instance { get; internal set; }
 
-        public Retransmitter request_retransmitter { get; set; }
+        internal Retransmitter request_retransmitter { get; set; }
 
-        public Retransmitter negotiate_retransmitter { get; set;}
+        internal Retransmitter negotiate_retransmitter { get; set;}
 
-        public uint64 ping { get; set; }
+        public uint64 ping { get; internal set; }
 
-        public SessionDirection direction { get; set; }
+        public SessionDirection direction { get; internal set; }
 
         public signal void established(StpOutputStream stream);
 

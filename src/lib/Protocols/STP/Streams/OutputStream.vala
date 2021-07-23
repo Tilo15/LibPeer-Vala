@@ -9,8 +9,11 @@ namespace LibPeer.Protocols.Stp.Streams {
         public InstanceReference target { get { return session.target; }}
         public uint8[] session_id { get { return session.identifier; }}
 
+        public signal void reply(StpInputStream stream);
+
         public StpOutputStream(EgressSession session) {
             this.session = session;
+            this.session.received_reply.connect(s => reply(new StpInputStream(s)));
         }
 
         public override bool close (GLib.Cancellable? cancellable) {

@@ -121,7 +121,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
             }
 
             // Calculate a maximum time value for segments eligable to be resent
-            uint64 max_time = get_monotonic_time() - (uint64)((worst_ping * Math.log10(redundant_resends + 10) * window_size) * 1000);
+            uint64 max_time = (get_monotonic_time()/1000) - (uint64)((worst_ping * Math.log10(redundant_resends + 10) * window_size) * 1000);
             
             // Do we have any in-flight segments to resend?
             foreach (var segment in in_flight.values) {
@@ -137,7 +137,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
         }
 
         public override Segments.Segment get_pending_segment() {
-            last_send = get_monotonic_time();
+            last_send = get_monotonic_time() / 1000;
             return base.get_pending_segment();
         }
 
