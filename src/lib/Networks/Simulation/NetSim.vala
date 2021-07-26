@@ -49,6 +49,7 @@ namespace LibPeer.Networks.Simulation {
 
                     // Drop
                     if (Random.int_range(1, 100) == loss_frac * 100) {
+                        print("[NET] Drop!\n");
                         continue;
                     }
 
@@ -90,8 +91,6 @@ namespace LibPeer.Networks.Simulation {
 
             // Create the packet
             var packet = new Packet(peer_info, data);
-
-            //  print(@"NET: $(origin.get(0)) $(origin.get(1)) $(origin.get(2)) to $(identifier.get(0)) $(identifier.get(1)) $(identifier.get(2))\n");
 
             // Add packet to queue
             packet_queue.push(new QueueCommand<Packet>.with_payload(packet));

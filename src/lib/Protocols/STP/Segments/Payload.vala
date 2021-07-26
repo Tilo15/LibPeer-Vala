@@ -14,7 +14,7 @@ namespace LibPeer.Protocols.Stp.Segments {
             DataOutputStream os = new DataOutputStream (stream);
             os.byte_order = DataStreamByteOrder.BIG_ENDIAN;
             os.put_uint64 (sequence_number);
-            reset_timing();
+            update_timing();
             os.put_uint64 (timing);
             os.put_uint32 (data.length);
             os.write (data);
@@ -31,8 +31,12 @@ namespace LibPeer.Protocols.Stp.Segments {
             ins.read(data);
         }
 
-        public void reset_timing() {
+        public void update_timing() {
             timing = get_monotonic_time()/1000;
+        }
+
+        public void reset_timing() {
+            timing = 0;
         }
 
         public Payload(uint64 sequence_number, uint8[] data) {

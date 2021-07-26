@@ -1,17 +1,15 @@
 
 namespace LibPeer.Protocols.Stp {
 
-    internal class Retransmitter {
+    internal abstract class Retransmitter {
 
-        public uint64 interval { get; private set; }
+        public uint64 interval { get; protected set; }
 
-        public int ttl { get; private set; }
+        public int ttl { get; protected set; }
 
         public uint64 last_called { get; private set; }
 
-        public Func<int> action { get; private set; }
-
-        public bool cancelled { get; private set; }
+        public bool cancelled { get; protected set; }
 
         public bool tick() {
             if(cancelled) {
@@ -20,7 +18,7 @@ namespace LibPeer.Protocols.Stp {
 
             if(last_called < get_monotonic_time() - interval*1000) {
                 ttl--;
-                action(ttl);
+                do_task();
                 last_called = get_monotonic_time();
 
                 if(ttl == 0) {
@@ -35,12 +33,7 @@ namespace LibPeer.Protocols.Stp {
             cancelled = true;
         }
 
-        public Retransmitter(uint64 interval, int times, Func<int> action) {
-            cancelled = false;
-            this.interval = interval;
-            ttl = times - 1;
-            this.action = action;
-        }
+        protected abstract void do_task();
 
     }
 

@@ -1,5 +1,6 @@
 using LibPeer.Protocols.Mx2;
 using LibPeer.Protocols.Stp.Segments;
+using LibPeer.Util;
 using Gee;
 
 namespace LibPeer.Protocols.Stp.Sessions {
@@ -8,12 +9,13 @@ namespace LibPeer.Protocols.Stp.Sessions {
 
         private uint64 next_expected_sequence_number = 0;
 
-        private HashMap<uint64?, Payload> reconstruction = new HashMap<int, Payload>();
+        private ConcurrentHashMap<uint64?, Payload> reconstruction = new ConcurrentHashMap<uint64?, Payload>(i => (uint)i, (a, b) => a == b);
 
         public signal void incoming_app_data(uint8[] data);
 
         public IngressSession(InstanceReference target, uint8[] session_id, uint64 ping) {
             base(target, session_id, ping);
+            open = true;
         }
 
         public override void process_segment(Segment segment) {

@@ -21,7 +21,7 @@ namespace LibPeer.Protocols.Stp {
 
         private ConcurrentHashMap<Bytes, Session> sessions = new ConcurrentHashMap<Bytes, Session>(k => k.hash(), (a, b) => a.compare(b) == 0);
 
-        private ArrayList<Retransmitter> retransmitters = new ArrayList<Retransmitter>();
+        private GLib.List<Retransmitter> retransmitters = new GLib.List<Retransmitter>();
 
         private Thread<void> send_thread;
 
@@ -52,8 +52,8 @@ namespace LibPeer.Protocols.Stp {
             var session_request = new RequestSession(negotiation.session_id, negotiation.in_reply_to, negotiation.feature_codes);
 
             // Send the request
-            negotiation.request_retransmitter = new Retransmitter(10000, 12, i => this.send_packet(negotiation.remote_instance, s => session_request.serialise(s)));
-            retransmitters.add(negotiation.request_retransmitter);
+            negotiation.request_retransmitter = new MessageRetransmitter(this, negotiation.remote_instance, session_request);
+            retransmitters.append(negotiation.request_retransmitter);
 
             // Return the negotiation object
             return negotiation;
@@ -108,8 +108,8 @@ namespace LibPeer.Protocols.Stp {
             var reply = new NegotiateSession(negotiation.session_id, {}, message.timing);
 
             // Repeatedly send the negotiation
-            negotiation.negotiate_retransmitter = new Retransmitter(10000, 12, i => this.send_packet(negotiation.remote_instance, s => reply.serialise(s)));
-            retransmitters.add(negotiation.negotiate_retransmitter);
+            negotiation.negotiate_retransmitter = new MessageRetransmitter(this, negotiation.remote_instance, reply);
+            retransmitters.append(negotiation.negotiate_retransmitter);
         }
 
         private void handle_negotiate_session(NegotiateSession message) {
@@ -138,7 +138,7 @@ namespace LibPeer.Protocols.Stp {
             var reply = new BeginSession(negotiation.session_id, message.timing);
 
             // Send the reply
-            send_packet(negotiation.remote_instance, s => reply.serialise(s));
+            this.retransmitters.append(new MessageRetransmitter(this, negotiation.remote_instance, reply));
 
             // Make sure the negotiation is in the right state
             if(negotiation.state != NegotiationState.REQUESTED) {
@@ -211,6 +211,7 @@ namespace LibPeer.Protocols.Stp {
         private void send_packet(InstanceReference target, Func<OutputStream> serialiser) throws IOError, Error{
             MemoryOutputStream stream = new MemoryOutputStream(null, GLib.realloc, GLib.free);
             serialiser(stream);
+            stream.flush();
             stream.close();
             uint8[] buffer = stream.steal_data();
             buffer.length = (int)stream.get_data_size();
@@ -259,7 +260,8 @@ namespace LibPeer.Protocols.Stp {
                 foreach(var session in sessions.values) {
                     if(session.has_pending_segment()) {
                         var segment = session.get_pending_segment();
-                        send_packet(session.target, s => segment.serialise(s));
+                        var message = new SegmentMessage(new Bytes(session.identifier), segment);
+                        send_packet(session.target, s => message.serialise(s));
                     }
                 }
                 foreach (var retransmitter in retransmitters) {
@@ -272,6 +274,27 @@ namespace LibPeer.Protocols.Stp {
 
         private void notify_app(ThreadFunc<void> func) {
             new Thread<void>("Application notification thread", func);
+        }
+
+        private class MessageRetransmitter : Retransmitter {
+
+            private StreamTransmissionProtocol stp;
+
+            private Message message;
+
+            private InstanceReference target;
+    
+            protected override void do_task () {
+                stp.send_packet(target, s => message.serialise(s));
+            }
+    
+            public MessageRetransmitter(StreamTransmissionProtocol stp, InstanceReference target, Message message, uint64 interval = 10000, int repeat = 12) {
+                this.stp = stp;
+                this.target = target;
+                this.message = message;
+                this.ttl = repeat;
+                this.interval = interval;
+            }
         }
     }
 

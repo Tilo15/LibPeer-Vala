@@ -1,5 +1,6 @@
 using LibPeer.Protocols.Mx2;
 using LibPeer.Protocols.Stp.Segments;
+using LibPeer.Util;
 using Gee;
 
 namespace LibPeer.Protocols.Stp.Sessions {
@@ -10,12 +11,12 @@ namespace LibPeer.Protocols.Stp.Sessions {
 
     public class EgressSession : Session {
 
-        private HashMap<uint64?, Payload> in_flight = new HashMap<uint64, Payload>();
+        private ConcurrentHashMap<uint64?, Payload> in_flight = new ConcurrentHashMap<uint64?, Payload>(i => (uint)i, (a, b) => a == b);
         private int in_flight_count = 0;
 
-        private HashMap<uint64?, SegmentTracker> segment_trackers = new HashMap<uint64, SegmentTracker>();
+        private ConcurrentHashMap<uint64?, SegmentTracker> segment_trackers = new ConcurrentHashMap<uint64?, SegmentTracker>(i => (uint)i, (a, b) => a == b);
 
-        private ArrayList<uint64?> segment_trips = new ArrayList<uint64>();
+        private ArrayList<uint64?> segment_trips = new ArrayList<uint64?>();
 
         protected AsyncQueue<Payload> payload_queue = new AsyncQueue<Payload>();
 
@@ -34,6 +35,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
             base(target, session_id, ping);
             best_ping = ping;
             worst_ping = ping;
+            open = true;
         }
 
         public override void process_segment(Segment segment) {
@@ -72,7 +74,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
                 redundant_resends++;
                 return;
             }
-
+            
             // We have an acknowledgement segment, remove payload segment from in-flight
             in_flight.unset(segment.sequence_number);
             in_flight_count--;
@@ -84,7 +86,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
             }
 
             // What was the time difference?
-            var round_trip = get_monotonic_time() - segment.timing;
+            var round_trip = (get_monotonic_time()/1000) - segment.timing;
 
             // Are we currently at metric window size?
             if(window_size == METRIC_WINDOW_SIZE) {
@@ -130,6 +132,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
                     // Resend it
                     segment.reset_timing();
                     queue_segment(segment);
+                    break;
                 }
             }
 
@@ -239,7 +242,8 @@ namespace LibPeer.Protocols.Stp.Sessions {
                     // TODO run through features
                     segment_trackers.set(next_sequence_number, tracker);
                     tracker.add_segment();
-                    payload_queue.push(new Payload(next_sequence_number, data[i*SEGMENT_PAYLOAD_SIZE:(i+1)*SEGMENT_PAYLOAD_SIZE]));
+                    int payload_size = data.length < (i+1)*SEGMENT_PAYLOAD_SIZE ? data.length : (i+1)*SEGMENT_PAYLOAD_SIZE;
+                    payload_queue.push(new Payload(next_sequence_number, data[i*SEGMENT_PAYLOAD_SIZE:payload_size]));
                     next_sequence_number ++;
                 }
             }
