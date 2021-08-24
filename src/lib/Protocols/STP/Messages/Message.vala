@@ -14,7 +14,9 @@ namespace LibPeer.Protocols.Stp.Messages {
             MemoryOutputStream buffer = new MemoryOutputStream(null, GLib.realloc, GLib.free);
             buffer.write({message_type});
             serialise_data(buffer);
-            stream.write(buffer.steal_data());
+            var primmy = buffer.steal_data();
+            primmy.length = (int)buffer.get_data_size();
+            stream.write(primmy);
         }
 
         protected abstract void serialise_data(OutputStream stream);

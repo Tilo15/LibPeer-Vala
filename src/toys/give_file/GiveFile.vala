@@ -16,10 +16,12 @@ namespace GiveFile {
         private StreamTransmissionProtocol transport;
         private string path;
         private HashSet<InstanceReference> peers = new HashSet<InstanceReference>(r => r.hash(), (a, b) => a.compare(b) == 0);
+        private MainLoop loop;
 
         public FileGiver(Conduit conduit, string file_path) {
+            loop = new MainLoop();
             muxer = new Muxer ();
-            network = conduit.get_interface ();
+            network = conduit.get_interface (0, 0, 0.2f);
             network.bring_up ();
             muxer.register_network (network);
             instance = muxer.create_instance ("GiveFile");
@@ -63,9 +65,19 @@ namespace GiveFile {
             var size = reader.read_uint32();
             var file = File.new_for_path(Uuid.string_random());
             var file_stream = file.create(FileCreateFlags.PRIVATE);
-            uint8[] data = new uint8[size];
-            reader.read(data);
-            file_stream.write(data);
+            uint8[] hunk = new uint8[size/100];
+            int hunks_received = 0;
+            while(hunks_received < size/100) {
+                reader.read(hunk);
+                file_stream.write(hunk);
+                hunks_received++;
+                print(@"rx file $(hunks_received)% complete\n");
+            }
+            if(size%100 != 0) {
+                hunk = new uint8[size%100];
+                reader.read(hunk);
+                file_stream.write(hunk);
+            }
             file_stream.flush();
             file_stream.close();
 
@@ -84,7 +96,7 @@ namespace GiveFile {
                     return;
                 }
             }
-
+            print("Peer asked to gib file\n");
             transport.initialise_stream(stream.target, stream.session_id).established.connect(send_file);
         }
 
@@ -102,6 +114,7 @@ namespace GiveFile {
             file_stream.read(buffer);
             stream.write(buffer);
             file_stream.close();
+            print("My purpose is complete!\n");
         }
 
     }

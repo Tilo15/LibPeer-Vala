@@ -12,7 +12,7 @@ namespace ExponentialPinger {
 
             Pinger[] pingas = new Pinger[count];
             for (int i = 0; i < count; i++){
-                pingas[i] = new Pinger(conduit);
+                pingas[i] = new Pinger(i, conduit);
             }
 
             while(true) {};

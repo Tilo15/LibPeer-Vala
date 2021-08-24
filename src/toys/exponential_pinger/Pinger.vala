@@ -12,8 +12,10 @@ namespace ExponentialPinger {
         private Network network;
         private Instance instance;
         private ConcurrentSet<InstanceReference> peers = new ConcurrentSet<InstanceReference>((a, b) => a.compare(b));
+        private int id;
 
-        public Pinger(Conduit conduit) throws Error, IOError {
+        public Pinger(int id, Conduit conduit) throws Error, IOError {
+            this.id = id;
             network = conduit.get_interface();
             network.bring_up();
             muxer.register_network(network);
@@ -24,7 +26,7 @@ namespace ExponentialPinger {
             network.incoming_advertisment.connect((adv) => rx_advertisement(adv));
 
             network.advertise(instance.reference);
-            print("A pinger has been spawned\n");
+            print(@"[$id] A pinger has been spawned\n");
         }
 
         private void rx_advertisement(Advertisement adv) throws Error, IOError {
@@ -43,7 +45,7 @@ namespace ExponentialPinger {
         private void rx_data(Packet packet) throws Error, IOError {
             peers.add(packet.origin);
             network.advertise(instance.reference);
-            print(@"RX DATA, I have $(peers.size) peers\n");
+            print(@"[$id] RX DATA, I have $(peers.size) peers\n");
 
             uint8[] data = new uint8[13];
             packet.stream.read(data);

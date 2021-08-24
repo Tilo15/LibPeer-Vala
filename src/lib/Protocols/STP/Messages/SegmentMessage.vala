@@ -10,6 +10,11 @@ namespace LibPeer.Protocols.Stp.Messages {
 
         public Segment segment { get; private set; }
 
+        public SegmentMessage(Bytes id, Segment segment) {
+            session_id = id;
+            this.segment = segment;
+        }
+
         protected override void serialise_data (OutputStream stream) {
             DataOutputStream os = new DataOutputStream (stream);
             os.byte_order = DataStreamByteOrder.BIG_ENDIAN;

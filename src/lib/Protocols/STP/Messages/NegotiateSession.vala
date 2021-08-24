@@ -25,7 +25,7 @@ namespace LibPeer.Protocols.Stp.Messages {
             os.put_byte ((uint8)feature_codes.length);
             os.write (feature_codes);
             os.put_uint64 (reply_timing);
-            os.put_uint64 (get_monotonic_time ());
+            os.put_uint64 (get_monotonic_time ()/1000);
             os.flush ();
         }
 
