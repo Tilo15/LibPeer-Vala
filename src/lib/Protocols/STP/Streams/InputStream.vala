@@ -11,7 +11,7 @@ namespace LibPeer.Protocols.Stp.Streams {
         private Cond data_cond = Cond();
         private Mutex data_mutex = Mutex();
 
-        public InstanceReference target { get { return session.target; }}
+        public InstanceReference origin { get { return session.target; }}
         public uint8[] session_id { get { return session.identifier; }}
 
         public StpInputStream(IngressSession session) {

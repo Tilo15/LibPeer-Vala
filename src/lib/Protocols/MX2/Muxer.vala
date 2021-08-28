@@ -60,7 +60,7 @@ namespace LibPeer.Protocols.Mx2 {
             return instance;
         }
 
-        public Inquiry inquire(Instance instance, InstanceReference destination, GLib.List<PeerInfo> peers) throws IOError, Error {
+        public Inquiry inquire(Instance instance, InstanceReference destination, PeerInfo[] peers) throws IOError, Error {
             // Create an inquiry
             var inquiry = new Inquiry(destination);
             inquiries.set(inquiry.id, inquiry);
