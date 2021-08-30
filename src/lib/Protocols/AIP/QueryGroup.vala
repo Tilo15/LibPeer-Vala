@@ -22,6 +22,10 @@ namespace LibPeer.Protocols.Aip {
             }
         }
 
+        public Iterator<InstanceReference> iterator() {
+            return instances.iterator();
+        }
+
     }
 
 }

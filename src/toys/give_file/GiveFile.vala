@@ -39,9 +39,7 @@ namespace GiveFile {
         void rx_advertisement(Advertisement adv) {
             print("rx_advertisement\n");
             if(!peers.contains(adv.instance_reference)) {
-                var peer_info = new GLib.List<PeerInfo>();
-                peer_info.append(adv.peer_info);
-                muxer.inquire(instance, adv.instance_reference, peer_info);
+                muxer.inquire(instance, adv.instance_reference, new PeerInfo[] {adv.peer_info});
             }
         }
 
@@ -97,7 +95,7 @@ namespace GiveFile {
                 }
             }
             print("Peer asked to gib file\n");
-            transport.initialise_stream(stream.target, stream.session_id).established.connect(send_file);
+            transport.initialise_stream(stream.origin, stream.session_id).established.connect(send_file);
         }
 
         void send_file(StpOutputStream stream) {

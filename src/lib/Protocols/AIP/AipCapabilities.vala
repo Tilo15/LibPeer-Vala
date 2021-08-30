@@ -51,6 +51,12 @@ namespace LibPeer.Protocols.Aip {
             }
         }
 
+        public bool has_capability_for_request_code(uint8 code) {
+            return (code == ApplicationInformationProtocol.REQUEST_ADDRESS && address_info)
+                || (code == ApplicationInformationProtocol.REQUEST_PEERS && find_peers)
+                || code == ApplicationInformationProtocol.REQUEST_CAPABILITIES;
+        }
+
     }
 
 }

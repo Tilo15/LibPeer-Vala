@@ -31,9 +31,7 @@ namespace ExponentialPinger {
 
         private void rx_advertisement(Advertisement adv) throws Error, IOError {
             if(!peers.contains(adv.instance_reference)) {
-                var peer_info = new GLib.List<PeerInfo>();
-                peer_info.append(adv.peer_info);
-                muxer.inquire(instance, adv.instance_reference, peer_info);
+                muxer.inquire(instance, adv.instance_reference, new PeerInfo[] {adv.peer_info});
             }
         }
 
