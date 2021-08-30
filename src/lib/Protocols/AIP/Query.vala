@@ -3,17 +3,17 @@ using Gee;
 
 namespace LibPeer.Protocols.Aip {
 
-    internal class Query {
+    public class Query {
 
-        public Bytes identifier { get; set; }
+        public Bytes identifier { get; internal set; }
 
-        public Bytes data { get; set; }
+        public Bytes data { get; internal set; }
 
-        public uint8 max_replies { get; set; }
+        public uint8 max_replies { get; internal set; }
 
-        public uint8 hops { get; set; }
+        public uint8 hops { get; internal set; }
 
-        public InstanceReference[] return_path { get; set; }
+        public InstanceReference[] return_path { get; internal set; }
 
         public signal void on_answer(InstanceInformation answer);
 
@@ -62,7 +62,7 @@ namespace LibPeer.Protocols.Aip {
             data = stream.read_bytes(data_length);
         }
 
-        public void append_return_hop(InstanceReference instance) {
+        internal void append_return_hop(InstanceReference instance) {
             var paths = return_path;
             return_path = new InstanceReference[paths.length + 1];
             return_path[paths.length] = instance;

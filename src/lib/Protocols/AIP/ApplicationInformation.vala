@@ -19,6 +19,13 @@ namespace LibPeer.Protocols.Aip {
             instance = iref;
             application_namespace = app_namespace;
         }
+
+        public ApplicationInformation.from_instance(Instance instance) {
+            this.instance = instance.reference;
+            application_namespace = instance.application_namespace;
+        }
+
+        public signal void new_group_peer();
     }
 
 }

@@ -3,7 +3,7 @@ using Gee;
 
 namespace LibPeer.Protocols.Aip {
 
-    internal class QueryGroup {
+    public class QueryGroup {
 
         private HashSet<InstanceReference> instances = new HashSet<InstanceReference>((a) => a.hash(), (a, b) => a.compare(b) == 0);
         private int target;

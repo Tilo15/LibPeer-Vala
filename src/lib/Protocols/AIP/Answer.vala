@@ -3,7 +3,7 @@ using Gee;
 
 namespace LibPeer.Protocols.Aip {
 
-    internal class Answer {
+    public class Answer {
 
         public Bytes in_reply_to { get; set; }
 

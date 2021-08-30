@@ -3,7 +3,7 @@ using LibPeer.Networks;
 
 namespace LibPeer.Protocols.Aip {
 
-    internal class InstanceInformation {
+    public class InstanceInformation {
 
         public InstanceReference instance_reference { get; private set; }
 

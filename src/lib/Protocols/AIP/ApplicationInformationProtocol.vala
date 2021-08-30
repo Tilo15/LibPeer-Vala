@@ -7,7 +7,7 @@ using Gee;
 
 namespace LibPeer.Protocols.Aip {
 
-    class ApplicationInformationProtocol {
+    public class ApplicationInformationProtocol {
 
         internal const uint8 DATA_FOLLOWING_REQUEST = 'R';
         internal const uint8 DATA_FOLLOWING_QUERY = 'Q';
@@ -82,6 +82,52 @@ namespace LibPeer.Protocols.Aip {
             network.incoming_advertisment.connect(rx_advertisement);
             muxer.register_network(network);
             network.advertise(instance.reference);
+        }
+
+        public void add_application(ApplicationInformation info) {
+            // Save reference to application
+            application_information.add(info);
+
+            // Join group for this application
+            join_query_group(info.namespace_bytes);
+
+            // Hook up signals
+            new_group_peer.connect((instance_ref, id) => {
+                if(id.compare(info.namespace_bytes) == 0) {
+                    info.new_group_peer();
+                }
+            });
+        }
+
+        public Query find_application_instance(ApplicationInformation app) {
+            // We must be in a query group for this application
+            assert(query_groups.has_key(app.namespace_bytes));
+
+            // Create the query
+            var query = new Query(new ByteComposer().add_byte(QUERY_APPLICATION).add_bytes(app.namespace_bytes).to_bytes());
+
+            // Send the query
+            initiate_query(query, query_groups.get(app.namespace_bytes));
+
+            // Return the query
+            return query;
+        }
+
+        public Query find_application_resource(ApplicationInformation app, Bytes resource_identifier) {
+            // We must be in a query group for this application
+            assert(query_groups.has_key(app.namespace_bytes));
+
+            // Resource identifiers must be 32 bytes long
+            assert(resource_identifier.length == 32);
+
+            // Create the query
+            var query = new Query(new ByteComposer().add_byte(QUERY_APPLICATION_RESOURCE).add_bytes(resource_identifier).add_bytes(app.namespace_bytes).to_bytes());
+
+            // Send the query
+            initiate_query(query, query_groups.get(app.namespace_bytes));
+
+            // Return the query
+            return query;
         }
 
         protected void rx_advertisement(Advertisement advertisement) {
@@ -395,7 +441,7 @@ namespace LibPeer.Protocols.Aip {
             
         }
 
-        public void queue_query_answer(Query query) {
+        protected void queue_query_answer(Query query) {
             // Do we have peer info to send yet?
             if(peer_info.size > 0) {
                 // Yes, do it
@@ -407,7 +453,7 @@ namespace LibPeer.Protocols.Aip {
             }
         }
 
-        public void send_query_answer(Query query) {
+        protected void send_query_answer(Query query) {
             // Create some instance information
             var instance_info = new InstanceInformation(instance.reference, peer_info.to_array());
 
@@ -429,7 +475,7 @@ namespace LibPeer.Protocols.Aip {
             send_answer(answer);
         }
 
-        public void join_query_group(Bytes group) {
+        protected void join_query_group(Bytes group) {
             // Create the query group
             query_groups.set(group, new QueryGroup());
 
@@ -444,7 +490,7 @@ namespace LibPeer.Protocols.Aip {
             }
         }
 
-        public void send_group_query(Bytes group) {
+        protected void send_group_query(Bytes group) {
             // Construct a query asking for peers in the group
             var query = new Query(new ByteComposer().add_byte(QUERY_GROUP).add_bytes(group).to_bytes());
 
@@ -471,7 +517,7 @@ namespace LibPeer.Protocols.Aip {
             initiate_query(query, default_group);
         }
 
-        public void initiate_query(Query query, QueryGroup group) {
+        protected void initiate_query(Query query, QueryGroup group) {
             // Save a reference to the query
             queries.set(query.identifier, query);
             handled_query_ids.add(query.identifier);
@@ -480,7 +526,7 @@ namespace LibPeer.Protocols.Aip {
             send_query(query, group);
         }
 
-        public void send_query(Query query, QueryGroup group) {
+        protected void send_query(Query query, QueryGroup group) {
             // Does the query have any hops left?
             if(query.hops > MAX_QUERY_HOPS) {
                 return;
@@ -501,7 +547,7 @@ namespace LibPeer.Protocols.Aip {
             }
         }
 
-        public void send_answer(Answer answer) {
+        protected void send_answer(Answer answer) {
             // Get (and remove) the last item from the path list
             var send_to = answer.path[answer.path.length-1];
             answer.path.length --;
