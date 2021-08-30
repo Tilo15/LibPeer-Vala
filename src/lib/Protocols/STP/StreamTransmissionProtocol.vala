@@ -32,10 +32,14 @@ namespace LibPeer.Protocols.Stp {
             send_thread = new Thread<void>("STP Network Send Thread", send_loop);
         }
 
-        public Negotiation initialise_stream(InstanceReference target, uint8[] in_reply_to = EMPTY_REPLY_TO) {
+        public Negotiation initialise_stream(InstanceReference target, uint8[]? in_reply_to = null) {
             // Initiate a stream with another peer
             var session_id = new uint8[16];
             UUID.generate_random(session_id);
+
+            if(in_reply_to == null) {
+                in_reply_to = EMPTY_REPLY_TO;
+            }
 
             // Start the negotiation
             var negotiation = new Negotiation() {

@@ -141,7 +141,7 @@ namespace LibPeer.Protocols.Aip {
             // Do we have any pending queries?
             if(pending_queries.length() > 0) {
                 // Clear the list
-                var queries = pending_queries;
+                var queries = pending_queries.copy();
                 pending_queries = null;
 
                 // Send pending queries
@@ -325,12 +325,15 @@ namespace LibPeer.Protocols.Aip {
             // Increment the query hops
             query.hops ++;
 
+            // Get query data
+            var query_data = query.data.get_data();
+
             // Find the query type
-            var query_type = query.data[0];
+            var query_type = query_data[0];
 
             if(query_type == QUERY_GROUP) {
                 // Get the group identifier
-                var group_id = query.data[1:-1];
+                var group_id = new Bytes(query_data[1:-1]);
 
                 // Are we not in this group, but joining all?
                 if(join_all_groups && !query_groups.has_key(group_id)) {
@@ -349,7 +352,7 @@ namespace LibPeer.Protocols.Aip {
             }
             else if(query_type == QUERY_APPLICATION) {
                 // Get the application namespace
-                var app_namespace = new Bytes(query.data[1:-1]);
+                var app_namespace = new Bytes(query_data[1:-1]);
 
                 // Are we in a group for this namespace?
                 if(query_groups.has_key(app_namespace)) {
@@ -368,10 +371,10 @@ namespace LibPeer.Protocols.Aip {
             }
             else if(query_type == QUERY_APPLICATION_RESOURCE) {
                 // Read the label
-                var label = new Bytes(query.data[1:33]);
+                var label = new Bytes(query_data[1:33]);
 
                 // Read the application namespace
-                var app_namespace = new Bytes(query.data[33:-1]);
+                var app_namespace = new Bytes(query_data[33:-1]);
 
                 // Are we in a group for this namespace?
                 if(query_groups.has_key(app_namespace)) {
