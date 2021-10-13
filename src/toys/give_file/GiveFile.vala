@@ -21,7 +21,7 @@ namespace GiveFile {
         public FileGiver(Conduit conduit, string file_path) {
             loop = new MainLoop();
             muxer = new Muxer ();
-            network = conduit.get_interface (0, 0, 0.2f);
+            network = conduit.get_interface (0, 0, 0.0f);
             network.bring_up ();
             muxer.register_network (network);
             instance = muxer.create_instance ("GiveFile");

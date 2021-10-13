@@ -9,6 +9,7 @@ namespace LibPeer.Protocols.Stp.Segments {
         public uint64 timing { get; private set; }
 
         protected override void serialise_data (OutputStream stream) {
+            //  print(@"***Ack segment $(sequence_number)\n");
             DataOutputStream os = new DataOutputStream (stream);
             os.byte_order = DataStreamByteOrder.BIG_ENDIAN;
             os.put_uint64 (sequence_number);

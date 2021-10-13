@@ -24,7 +24,9 @@ namespace LibPeer.Protocols.Stp.Messages {
             os.write (session_id.get_data());
             os.write (in_reply_to.get_data());
             os.put_byte ((uint8)feature_codes.length);
-            os.write (feature_codes);
+            if(feature_codes != null) {
+                os.write (feature_codes);
+            }
             os.put_uint64 (get_monotonic_time ()/1000);
             os.flush ();
         }
@@ -40,7 +42,9 @@ namespace LibPeer.Protocols.Stp.Messages {
             in_reply_to = new Bytes(b_in_reply_to);
             uint8 feature_count = ins.read_byte ();
             feature_codes = new uint8[feature_count];
-            ins.read(feature_codes);
+            if(feature_codes != null) {
+                ins.read(feature_codes);
+            }
             timing = ins.read_uint64 ();
         }
 

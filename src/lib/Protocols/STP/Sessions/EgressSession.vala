@@ -70,6 +70,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
         private void handle_acknowledgement(Acknowledgement segment) {
             // Is this segment still in-flight?
             if(!in_flight.has_key(segment.sequence_number)) {
+                //  print(@"***Redundant resend (segment $(segment.sequence_number))\n");
                 // No, we must have resent redundantly
                 redundant_resends++;
                 return;
@@ -123,12 +124,13 @@ namespace LibPeer.Protocols.Stp.Sessions {
             }
 
             // Calculate a maximum time value for segments eligable to be resent
-            uint64 max_time = (get_monotonic_time()/1000) - (uint64)((worst_ping * Math.log10(redundant_resends + 10) * window_size) * 1000);
+            uint64 max_time = (get_monotonic_time()/1000) - 5000; //(uint64)((worst_ping * Math.log10(redundant_resends + 10) * window_size) * 1000);
             
             // Do we have any in-flight segments to resend?
             foreach (var segment in in_flight.values) {
                 // Is the segment timing value less than the max time?
                 if(segment.timing != 0 && segment.timing < max_time) {
+                    print(@"***Resend segment $(segment.sequence_number)\n");
                     // Resend it
                     segment.reset_timing();
                     queue_segment(segment);
@@ -209,7 +211,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
             }
         }
 
-        public override void close_session(string reason) {
+        protected override void close_session(string reason) {
             base.close_session(reason);
             var error = new IOError.CONNECTION_CLOSED("The session was closed before the segment was sent");
             foreach (var tracker in segment_trackers.values) {

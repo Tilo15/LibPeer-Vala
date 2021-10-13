@@ -1,5 +1,0 @@
-
-
-namespace LibPeer.Protocols.Stp {
-
-}

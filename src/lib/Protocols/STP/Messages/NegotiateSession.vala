@@ -23,7 +23,9 @@ namespace LibPeer.Protocols.Stp.Messages {
             os.byte_order = DataStreamByteOrder.BIG_ENDIAN;
             os.write (session_id.get_data ());
             os.put_byte ((uint8)feature_codes.length);
-            os.write (feature_codes);
+            if(feature_codes != null) {
+                os.write (feature_codes);
+            }
             os.put_uint64 (reply_timing);
             os.put_uint64 (get_monotonic_time ()/1000);
             os.flush ();
@@ -37,7 +39,9 @@ namespace LibPeer.Protocols.Stp.Messages {
             session_id = new Bytes(b_session_id);
             uint8 feature_count = ins.read_byte ();
             feature_codes = new uint8[feature_count];
-            ins.read(feature_codes);
+            if(feature_codes != null) {
+                ins.read(feature_codes);
+            }
             reply_timing = ins.read_uint64 ();
             timing = ins.read_uint64 ();
         }

@@ -45,7 +45,7 @@ namespace LibPeer.Protocols.Stp {
             var negotiation = new Negotiation() {
                 session_id = new Bytes(session_id),
                 in_reply_to = new Bytes(in_reply_to),
-                feature_codes = {},
+                feature_codes = new uint8[0],
                 state = NegotiationState.REQUESTED,
                 remote_instance = target,
                 direction = SessionDirection.EGRESS

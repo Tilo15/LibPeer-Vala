@@ -18,23 +18,27 @@ namespace Discoverer {
 
         public DiscoverWorker(int id, Conduit conduit) throws Error, IOError {
             this.id = id;
-            network = conduit.get_interface();
+            network = conduit.get_interface (200, 400, 0.0f);
             network.bring_up();
+            print("Instansiate\n");
             aip = new ApplicationInformationProtocol(muxer);
+            print("Add network\n");
             aip.add_network(network);
 
             app_instance = new Instance("discovery_toy");
             app_info = new ApplicationInformation.from_instance(app_instance);
             app_info.new_group_peer.connect(group_peers_found);
+            print("Add application\n");
             aip.add_application (app_info);
         }
 
         private void group_peers_found() {
+            print("[GOAL!] Find application instance\n");
             aip.find_application_instance(app_info).on_answer.connect(found_peer);
         }
 
         private void found_peer(InstanceInformation info) {
-            print("I found a peer!\n");
+            print("[GOAL!] I found a peer!\n");
         }
 
     }

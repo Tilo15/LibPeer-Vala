@@ -1,6 +1,6 @@
 vapi_dir = meson.current_source_dir() / 'vapi'
 
-add_project_arguments(['--disable-warnings','--vapidir', vapi_dir], language: 'vala')
+add_project_arguments(['--disable-warnings', '--enable-checking','--vapidir', vapi_dir], language: 'vala')
 
 dependencies = [
     dependency('glib-2.0'),
@@ -36,7 +36,6 @@ sources += files('Protocols/MX2/PathStrategy.vala')
 sources += files('Protocols/STP/StreamTransmissionProtocol.vala')
 sources += files('Protocols/STP/Negotiation.vala')
 sources += files('Protocols/STP/Retransmitter.vala')
-sources += files('Protocols/STP/MessageRetransmitter.vala')
 sources += files('Protocols/STP/Sessions/Session.vala')
 sources += files('Protocols/STP/Sessions/IngressSession.vala')
 sources += files('Protocols/STP/Sessions/EgressSession.vala')
@@ -59,6 +58,7 @@ sources += files('Protocols/AIP/QueryGroup.vala')
 sources += files('Protocols/AIP/Query.vala')
 sources += files('Protocols/AIP/InstanceInformation.vala')
 sources += files('Protocols/AIP/Answer.vala')
+sources += files('Protocols/AIP/Request.vala')
 sources += files('Util/ByteComposer.vala')
 sources += files('Util/QueueCommand.vala')
 sources += files('Util/ThreadTimer.vala')

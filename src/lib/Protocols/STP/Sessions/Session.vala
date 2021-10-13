@@ -44,7 +44,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
         }
 
         public virtual void close() {
-            outgoing_segment_queue = new AsyncQueue<Segment>();
+            //  outgoing_segment_queue = new AsyncQueue<Segment>();
             queue_segment(new Control(ControlCommand.COMPLETE));
             close_session("Stream closed by local application");
         }

@@ -83,6 +83,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
                 composer.add_byte_array(segment.data);
             }
 
+            //  print(@"$(next_expected_sequence_number) => $(sequence)\n");
             // Sequence is now the next expected sequence number
             next_expected_sequence_number = sequence;
 

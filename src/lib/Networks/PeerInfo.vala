@@ -5,7 +5,7 @@ using LibPeer.Util;
 namespace LibPeer.Networks
 {
     
-    public abstract class PeerInfo {
+    public abstract class PeerInfo : Object {
 
         private static ConcurrentHashMap<Bytes, Type> info_types = new ConcurrentHashMap<Bytes, Type>((a) => a.hash(), (a, b) => a.compare(b) == 0);
         
@@ -58,13 +58,16 @@ namespace LibPeer.Networks
             var network_type = reader.read_bytes(type_length);
 
             //  Get the info subclass
-            Type peer_info_type = info_types.get(network_type);
+            Type peer_info_type = typeof(UnknownPeerInfo);
+            if(info_types.has_key(network_type)) {
+                peer_info_type = info_types.get(network_type);
+            }
 
             // Create the peer info object
             PeerInfo peer_info = Object.new(peer_info_type) as PeerInfo;
 
             // Build out the data
-            peer_info.build(data_length, stream);
+            peer_info.build(data_length, reader);
 
             // Return the object
             return peer_info;
