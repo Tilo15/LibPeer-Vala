@@ -8,13 +8,15 @@ namespace LibPeer.Networks
     public class UnknownPeerInfo : PeerInfo {
 
         private Bytes information;
+        private Bytes network_identifier;
 
         public override GLib.Bytes get_network_identifier () {
-            return new Bytes({});
+            return new Bytes(network_identifier.get_data());
         }
 
-        protected override void build(uint8 data_length, InputStream stream) throws Error {
+        protected override void build(uint8 data_length, InputStream stream, Bytes network_type) throws Error {
             information = stream.read_bytes(data_length);
+            network_identifier = network_type;
         }
 
         protected override Bytes get_data_segment() {

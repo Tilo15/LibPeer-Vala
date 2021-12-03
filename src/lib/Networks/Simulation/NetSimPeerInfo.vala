@@ -10,6 +10,7 @@ namespace LibPeer.Networks.Simulation {
         internal uint8[] identifier = new uint8[IDENTIFIER_SIZE];
 
         internal NetSimPeerInfo(Bytes identifier) {
+            register_info_type();
             this.identifier = identifier.get_data();
         }
 
@@ -17,7 +18,7 @@ namespace LibPeer.Networks.Simulation {
             return new Bytes({'N', 'e', 't', 'S', 'i', 'm'});
         }
 
-        protected override void build(uint8 data_length, InputStream stream) throws Error {
+        protected override void build(uint8 data_length, InputStream stream, Bytes network_type) throws Error {
             identifier = stream.read_bytes(16).get_data();
         }
 
@@ -44,7 +45,7 @@ namespace LibPeer.Networks.Simulation {
         }
 
         public override string to_string() {
-            return "";
+            return @"NetSim [$(identifier[0]), $(identifier[1]), $(identifier[2]), $(identifier[3])]";
         }
     }
 

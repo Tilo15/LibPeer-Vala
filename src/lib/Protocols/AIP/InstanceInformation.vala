@@ -24,6 +24,7 @@ namespace LibPeer.Protocols.Aip {
             // Write number of connection methods
             dos.put_byte((uint8)connection_methods.length);
 
+            print("Connection methods\n");
             // Write connection methods
             foreach (var method in connection_methods) {
                 method.serialise(dos);

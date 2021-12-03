@@ -53,7 +53,7 @@ namespace LibPeer.Protocols.Aip {
         protected TimeoutMap<InstanceReference, Bytes> pending_group_peers = new TimeoutMap<InstanceReference, Bytes>(120, (a) => a.hash(), (a, b) => a.compare(b) == 0);
         public signal void ready();
 
-        private GLib.List<Query> pending_queries = new GLib.List<Query>();
+        private Gee.List<Query> pending_queries = new Gee.LinkedList<Query>();
 
         public ApplicationInformationProtocol(Muxer muxer, AipCapabilities? capabilities = null, bool join_all = false) {
             if(capabilities == null) {
@@ -194,10 +194,11 @@ namespace LibPeer.Protocols.Aip {
             peer_info.add(info);
             
             // Do we have any pending queries?
-            if(pending_queries.length() > 0) {
+            if(pending_queries.size > 0) {
+                print("Sending pending queries");
                 // Clear the list
-                var queries = pending_queries.copy();
-                pending_queries = null;
+                var queries = pending_queries;
+                pending_queries = new Gee.LinkedList<Query>();
 
                 // Send pending queries
                 foreach (var query in queries) {
@@ -483,12 +484,13 @@ namespace LibPeer.Protocols.Aip {
             print("Queue query answer\n");
             // Do we have peer info to send yet?
             if(peer_info.size > 0) {
+                print("Query sent immediately\n");
                 // Yes, do it
                 send_query_answer(query);
             }
             else {
                 // No, wait for peer info
-                pending_queries.append(query);
+                pending_queries.add(query);
             }
         }
 
@@ -498,6 +500,7 @@ namespace LibPeer.Protocols.Aip {
 
             // Serialise the info
             MemoryOutputStream stream = new MemoryOutputStream(null, GLib.realloc, GLib.free);
+            print("Serialising instance info\n");
             instance_info.serialise(stream);
             stream.close();
             uint8[] buffer = stream.steal_data();
@@ -615,6 +618,7 @@ namespace LibPeer.Protocols.Aip {
 
             // Open a stream with the instance
             transport.initialise_stream(send_to).established.connect(stream => {
+                print("Writing answer to stream\n");
                 // Tell the instance that the data that follows is an answer
                 stream.write(new uint8[] { DATA_FOLLOWING_ANSWER });
 

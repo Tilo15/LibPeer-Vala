@@ -48,7 +48,7 @@ namespace LibPeer.Protocols.Stp.Streams {
                 data_cond.wait(data_mutex);
             }
             var available_data = unread_data.length < buffer.length ? unread_data.length : buffer.length;
-            print(@"Read $(available_data) of $(buffer.length) bytes\n");
+            //  print(@"Read $(available_data) of $(buffer.length) bytes\n");
             for(int i = 0; i < available_data; i++) {
                 buffer[i] = unread_data[i];
             }
