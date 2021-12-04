@@ -328,7 +328,8 @@ namespace LibPeer.Protocols.Aip {
                 var query = queries.get(answer.in_reply_to);
 
                 // Get instance information from the answer
-                var info = new InstanceInformation.from_stream(new MemoryInputStream.from_bytes(answer.data));
+                var answer_stream = new MemoryInputStream.from_bytes(answer.data);
+                var info = new InstanceInformation.from_stream(answer_stream);
 
                 // Notify the query's subject listeners
                 query.on_answer(info);
@@ -339,6 +340,8 @@ namespace LibPeer.Protocols.Aip {
                 // Put it back on its path
                 send_answer(answer);
             }
+
+            print("Answer handled!\n");
         }
 
         protected void handle_request(StpInputStream stream) throws IOError, Error {

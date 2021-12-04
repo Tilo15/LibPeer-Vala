@@ -15,6 +15,8 @@ namespace LibPeer.Protocols.Aip {
             var dos = new DataOutputStream(stream);
             dos.byte_order = DataStreamByteOrder.BIG_ENDIAN;
 
+            dos.write_bytes(in_reply_to);
+
             dos.put_int32(data.length);
             dos.put_byte((uint8)path.length);
 
@@ -34,12 +36,15 @@ namespace LibPeer.Protocols.Aip {
 
             var data_length = dis.read_int32();
             var path_size = dis.read_byte();
+            print(@"Reading $(path_size) instance references\n");
 
             path = new InstanceReference[path_size];
 
             for(var i = 0; i < path_size; i++) {
                 path[i] = new InstanceReference.from_stream(dis);
             }
+
+            print(@"Reading $(data_length) bytes of answer data\n");
 
             data = dis.read_bytes(data_length);
         }

@@ -24,7 +24,7 @@ namespace LibPeer.Protocols.Aip {
             // Write number of connection methods
             dos.put_byte((uint8)connection_methods.length);
 
-            print("Connection methods\n");
+            print(@"$(connection_methods.length) Connection methods\n");
             // Write connection methods
             foreach (var method in connection_methods) {
                 method.serialise(dos);
@@ -40,11 +40,12 @@ namespace LibPeer.Protocols.Aip {
 
             // Read number of connection methods
             var method_count = dis.read_byte();
+            print(@"Reading $(method_count) connection methods\n");
 
             // Read conneciton methods
             connection_methods = new PeerInfo[method_count];
             for (int i = 0; i < method_count; i++) {
-                connection_methods[i] = PeerInfo.deserialise(stream);
+                connection_methods[i] = PeerInfo.deserialise(dis);
             }
         }
 
