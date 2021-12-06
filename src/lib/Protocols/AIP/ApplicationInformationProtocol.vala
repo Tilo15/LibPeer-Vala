@@ -93,9 +93,9 @@ namespace LibPeer.Protocols.Aip {
 
             // Hook up signals
             new_group_peer.connect((instance_ref, id) => {
-                //print("New group peer?\n");
+                print("New group peer?\n");
                 if(id.compare(info.namespace_bytes) == 0) {
-                    //print("New group peer\n");
+                    print("New group peer\n");
                     info.new_group_peer();
                 }
             });
@@ -165,7 +165,7 @@ namespace LibPeer.Protocols.Aip {
             }
             // Can we send queries and answers to this peer?
             if(capabilities.query_answer) {
-                //print("This peer is queryable\n");
+                print("This peer is queryable\n");
                 // Yes, add to default group
                 default_group.add_peer(target);
 
@@ -174,7 +174,7 @@ namespace LibPeer.Protocols.Aip {
 
                 // We now have a queryable peer
                 if(!is_ready) {
-                    //print("Ready B)\n");
+                    print("Ready B)\n");
                     is_ready = true;
                     ready();
                 }
@@ -212,19 +212,19 @@ namespace LibPeer.Protocols.Aip {
             // We received a list of peers running AIP, do we want more peers?
             if(!default_group.actively_connect) {
                 // Don't worry about it
-                //print("rx peers: ignored\n");
+                print("rx peers: ignored\n");
                 return;
             }
 
             // Send out inquries to the peers
             foreach (var peer in peers) {
-                //print("rx peers: Inquire\n");
+                print("rx peers: Inquire\n");
                 muxer.inquire(instance, peer.instance_reference, peer.connection_methods);
             }
         }
 
         protected Request<PeerInfo> request_address(InstanceReference target) {
-            //print("request address\n");
+            print("request address\n");
             // Make the request
             var request = new ByteComposer().add_byte(REQUEST_ADDRESS).to_bytes();
             var peer_info_request = new Request<PeerInfo>();
@@ -241,7 +241,7 @@ namespace LibPeer.Protocols.Aip {
 
         protected Request<AipCapabilities> request_capabilities(InstanceReference target) {
             // Make the request
-            //print("Request capabilities\n");
+            print("Request capabilities\n");
             var request_data = new ByteComposer().add_byte(REQUEST_CAPABILITIES).to_bytes();
             var request = new Request<AipCapabilities>();
             send_request(request_data, target).response.connect((s) => {
@@ -254,7 +254,7 @@ namespace LibPeer.Protocols.Aip {
         }
 
         protected Request<Gee.List<InstanceInformation>> request_peers(InstanceReference target) {
-            //print("request peers\n");
+            print("request peers\n");
             // Make the request
             var request_data = new ByteComposer().add_byte(REQUEST_PEERS).to_bytes();
             var request = new Request<Gee.List<InstanceInformation>>();
@@ -360,22 +360,22 @@ namespace LibPeer.Protocols.Aip {
             transport.initialise_stream(stream.origin, stream.session_id).established.connect(os => {
                 switch (request_type) {
                     case REQUEST_CAPABILITIES:
-                        //print("I got a capabilities request\n");
+                        print("I got a capabilities request\n");
                         capabilities.serialise(os);
                         break;
                     case REQUEST_ADDRESS:
-                        //print("I got an address request\n");
+                        print("I got an address request\n");
                         muxer.get_peer_info_for_instance(os.target).serialise(os);
                         break;
                     case REQUEST_PEERS:
-                        //print("I got a peers request\n");
+                        print("I got a peers request\n");
                         // TODO: implement
                         os.write(new uint8[] {0});
                         break;
                 }
-                //print("Replied\n");
+                print("Replied\n");
                 os.close();
-                //print("Reply stream closed\n");
+                print("Reply stream closed\n");
             });
 
             // Have we encountered this peer before?
@@ -521,7 +521,7 @@ namespace LibPeer.Protocols.Aip {
         }
 
         protected void join_query_group(Bytes group) {
-            //print("Join query group\n");
+            print("Join query group\n");
             // Create the query group
             query_groups.set(group, new QueryGroup());
 
@@ -573,7 +573,7 @@ namespace LibPeer.Protocols.Aip {
         }
 
         protected void send_query(Query query, QueryGroup group) {
-            //print("Send query\n");
+            print("Send query\n");
             // Does the query have any hops left?
             if(query.hops > MAX_QUERY_HOPS) {
                 return;
@@ -581,7 +581,7 @@ namespace LibPeer.Protocols.Aip {
 
             // Loop over each instance in the query group
             foreach (var instance_ref in group) {
-                //print("Contacting peer for query\n");
+                print("Contacting peer for query\n");
                 transport.initialise_stream(instance_ref).established.connect(stream => {
                     // Tell the instance that the data that follows is a query
                     print("Query stream established\n");
@@ -602,8 +602,9 @@ namespace LibPeer.Protocols.Aip {
 
         protected void send_answer(Answer answer) {
             // Get (and remove) the last item from the path list
-            var send_to = answer.path[answer.path.length-1];
-            answer.path.length --;
+            print(@"Before pop answer.path.length = $(answer.path.length)\n");
+            InstanceReference send_to = answer.pop_path();
+            print(@"After pop answer.path.length = $(answer.path.length)\n");
 
             // Don't send answers to queries we haven't received
             if(!query_response_count.has_key(answer.in_reply_to)) {
@@ -618,6 +619,7 @@ namespace LibPeer.Protocols.Aip {
 
             // Decrement response counter (stops at 0)
             query_response_count.set(answer.in_reply_to, response_count - 1);
+            print(@"Forwarding answer: send_to != null = $(send_to != null); answer.path.length = $(answer.path.length);\n");
 
             // Open a stream with the instance
             transport.initialise_stream(send_to).established.connect(stream => {

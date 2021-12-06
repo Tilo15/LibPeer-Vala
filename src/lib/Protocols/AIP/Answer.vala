@@ -49,5 +49,15 @@ namespace LibPeer.Protocols.Aip {
             data = dis.read_bytes(data_length);
         }
 
+        public InstanceReference pop_path() {
+            var reference = path[path.length - 1];
+            var old_path = path;
+            path = new InstanceReference[old_path.length - 1];
+            for(int i = 0; i < path.length; i++) {
+                path[i] = old_path[i];
+            }
+            return reference;
+        }
+
     }
 }

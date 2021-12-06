@@ -135,7 +135,7 @@ namespace LibPeer.Protocols.Mx2 {
             // Do we know the destination instance?
             if(!remote_instance_mapping.has_key(destination)) {
                 // No, throw an error
-                throw new IOError.HOST_NOT_FOUND("No knwon way to reach the specified instance");
+                throw new IOError.HOST_NOT_FOUND("No known way to reach the specified instance");
             }
 
             // Get access information
@@ -196,6 +196,8 @@ namespace LibPeer.Protocols.Mx2 {
                     path_info = frame.via.return_path
                 });
 
+                print(@"Saved instance mapping with address $(receiption.peer_info.to_string()) due to inquiry\n");
+
                 // Create the greeting
                 uint8[] greeting = new ByteComposer()
                     .add_byte(PACKET_GREET)
@@ -218,6 +220,8 @@ namespace LibPeer.Protocols.Mx2 {
                     peer_info = receiption.peer_info,
                     path_info = frame.via.return_path
                 });
+
+                print(@"Saved instance mapping with address $(receiption.peer_info.to_string()) due to greeting\n");
 
                 // Get the inquiry id
                 Bytes inquiry_id = new Bytes(frame.payload[1:17]);

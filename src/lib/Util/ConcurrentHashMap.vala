@@ -27,7 +27,7 @@ namespace LibPeer.Util {
 
         public override void clear () {
             lock(_map) {
-                clear();
+                _map.clear();
             }
         }
 		/**

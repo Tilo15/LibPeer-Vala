@@ -40,6 +40,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
 
         protected virtual void close_session(string reason) {
             open = false;
+            //  print(@"[SESSION CLOSED] $(reason)\n");
             session_closed(reason);
         }
 

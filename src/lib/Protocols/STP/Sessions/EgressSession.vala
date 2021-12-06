@@ -213,6 +213,8 @@ namespace LibPeer.Protocols.Stp.Sessions {
 
         protected override void close_session(string reason) {
             base.close_session(reason);
+            payload_queue = new AsyncQueue<Payload>();
+            in_flight.clear();
             var error = new IOError.CONNECTION_CLOSED("The session was closed before the segment was sent");
             foreach (var tracker in segment_trackers.values) {
                 tracker.fail(error);

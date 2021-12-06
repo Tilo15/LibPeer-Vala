@@ -33,6 +33,10 @@ namespace LibPeer.Protocols.Stp {
         }
 
         public Negotiation initialise_stream(InstanceReference target, uint8[]? in_reply_to = null) {
+            if(muxer.get_peer_info_for_instance(target) == null) {
+                Posix.abort();
+            }
+
             // Initiate a stream with another peer
             var session_id = new uint8[16];
             UUID.generate_random(session_id);
@@ -263,10 +267,14 @@ namespace LibPeer.Protocols.Stp {
             while(true) {
                 foreach(var session in sessions.values) {
                     if(session.has_pending_segment()) {
-                        var segment = session.get_pending_segment();
-                        var message = new SegmentMessage(new Bytes(session.identifier), segment);
-                        send_packet(session.target, s => message.serialise(s));
+                        send_pending_segement(session);
                     }
+                    //  if(!session.open) {
+                    //      while(session.has_pending_segment()) {
+                    //          send_pending_segement(session);
+                    //      }
+                    //      sessions.unset(new Bytes(session.identifier));
+                    //  }
                 }
                 foreach (var retransmitter in retransmitters) {
                     if(!retransmitter.tick()) {
@@ -274,6 +282,12 @@ namespace LibPeer.Protocols.Stp {
                     }
                 }
             }
+        }
+
+        private void send_pending_segement(Session session) {
+            var segment = session.get_pending_segment();
+            var message = new SegmentMessage(new Bytes(session.identifier), segment);
+            send_packet(session.target, s => message.serialise(s));
         }
 
         private void notify_app(ThreadFunc<void> func) {

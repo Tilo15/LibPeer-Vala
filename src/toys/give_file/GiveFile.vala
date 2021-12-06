@@ -65,7 +65,7 @@ namespace GiveFile {
             var file_stream = file.create(FileCreateFlags.PRIVATE);
             uint8[] hunk = new uint8[size/100];
             int hunks_received = 0;
-            while(hunks_received < size/100) {
+            while(hunks_received < 100) {
                 reader.read(hunk);
                 file_stream.write(hunk);
                 hunks_received++;

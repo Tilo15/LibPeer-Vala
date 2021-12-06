@@ -32,7 +32,9 @@ namespace LibPeer.Protocols.Aip {
 
             // Serialise the return path
             foreach (var reference in return_path) {
+                print("Instance reference serialisation for return path begins\n");
                 reference.serialise(dos);
+                print("Instance reference serialisation for return path ends\n");
             }
 
             // Write the query data
@@ -76,6 +78,9 @@ namespace LibPeer.Protocols.Aip {
             var paths = return_path;
             return_path = new InstanceReference[paths.length + 1];
             return_path[paths.length] = instance;
+            for(int i = 0; i < paths.length; i++) {
+                return_path[i] = paths[i];
+            }
         }
 
         public Query(Bytes data, uint8 max_replies = 10, uint8 hops = 0, InstanceReference[] return_path = new InstanceReference[0], Bytes? identifier = null) {
