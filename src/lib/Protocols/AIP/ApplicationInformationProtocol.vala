@@ -311,7 +311,7 @@ namespace LibPeer.Protocols.Aip {
                 handle_request(stream);
             }
             else {
-                print("RX Stream: Invalid (stream closed)\n");
+                print(@"RX Stream: Invalid following $(following) (stream closed)\n");
                 stream.close();
             }
 

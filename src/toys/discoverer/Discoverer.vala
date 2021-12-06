@@ -16,9 +16,9 @@ namespace Discoverer {
         private Instance app_instance;
         private int id;
 
-        public DiscoverWorker(int id, Conduit conduit) throws Error, IOError {
+        public DiscoverWorker(int id, Network net) throws Error, IOError {
             this.id = id;
-            network = conduit.get_interface (200, 400, 0.0f);
+            network = net;
             network.bring_up();
             print("Instansiate\n");
             aip = new ApplicationInformationProtocol(muxer);

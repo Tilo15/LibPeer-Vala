@@ -5,6 +5,7 @@ namespace LibPeer.Protocols.Mx2 {
 
         public uint8[] verification_key { get; private set; }
         public uint8[] public_key { get; private set; }
+        public const int SERIALISED_SIZE = 64;
 
         public InstanceReference(uint8[] verification_key, uint8[] public_key) 
         requires (verification_key.length == 32)
@@ -27,20 +28,19 @@ namespace LibPeer.Protocols.Mx2 {
             stream.write(public_key);
         }
 
-        private Bytes combined_bytes () {
-            uint8[] combined = new Util.ByteComposer()
-                .add_byte_array(verification_key)
-                .add_byte_array(public_key)
-                .to_byte_array();
-            return new Bytes(combined);
-        }
-
         public uint hash() {
-            return combined_bytes().hash();
+            return to_bytes().hash();
         }
 
         public int compare(InstanceReference other) {
-            return combined_bytes().compare(other.combined_bytes());
+            return to_bytes().compare(other.to_bytes());
+        }
+
+        public Bytes to_bytes() {
+            return new Util.ByteComposer()
+            .add_byte_array(verification_key)
+            .add_byte_array(public_key)
+            .to_bytes();
         }
 
     }

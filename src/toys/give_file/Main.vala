@@ -11,7 +11,7 @@ namespace GiveFile {
 
             FileGiver[] givers = new FileGiver[args.length-1];
             for(int i = 1; i < args.length; i++) {
-                givers[i-1] = new FileGiver(conduit, args[i]);
+                givers[i-1] = new FileGiver(conduit.get_interface (0, 0, 0.0f), args[i]);
             }
 
             while(true) {};

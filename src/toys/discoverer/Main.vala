@@ -12,7 +12,7 @@ namespace Discoverer {
 
             DiscoverWorker[] pingas = new DiscoverWorker[count];
             for (int i = 0; i < count; i++){
-                pingas[i] = new DiscoverWorker(i, conduit);
+                pingas[i] = new DiscoverWorker(i, conduit.get_interface (10, 10, 0.0f));
             }
 
             while(true) {};

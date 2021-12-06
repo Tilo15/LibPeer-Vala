@@ -18,10 +18,10 @@ namespace GiveFile {
         private HashSet<InstanceReference> peers = new HashSet<InstanceReference>(r => r.hash(), (a, b) => a.compare(b) == 0);
         private MainLoop loop;
 
-        public FileGiver(Conduit conduit, string file_path) {
+        public FileGiver(Network net, string file_path) {
             loop = new MainLoop();
             muxer = new Muxer ();
-            network = conduit.get_interface (0, 0, 0.0f);
+            network = net;
             network.bring_up ();
             muxer.register_network (network);
             instance = muxer.create_instance ("GiveFile");

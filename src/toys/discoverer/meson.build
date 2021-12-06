@@ -10,3 +10,8 @@ sources = files('Main.vala')
 sources += files('Discoverer.vala')
 
 executable('discoverer', sources, dependencies: dependencies)
+
+sources = files('MainIP.vala')
+sources += files('Discoverer.vala')
+
+executable('discoverer_ipv4', sources, dependencies: dependencies)

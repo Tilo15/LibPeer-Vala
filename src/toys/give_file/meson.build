@@ -10,3 +10,8 @@ sources = files('Main.vala')
 sources += files('GiveFile.vala')
 
 executable('give_file', sources, dependencies: dependencies)
+
+sources = files('MainIP.vala')
+sources += files('GiveFile.vala')
+
+executable('give_file_ipv4', sources, dependencies: dependencies)
