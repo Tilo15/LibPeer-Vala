@@ -6,6 +6,8 @@ namespace LibPeer.Networks {
         
         public abstract Bytes get_network_identifier();
 
+        public abstract uint16 get_mtu();
+
         public signal void incoming_advertisment(Advertisement advertisement);
 
         public signal void incoming_receiption(Receiption receiption);

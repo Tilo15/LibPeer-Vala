@@ -1,3 +1,5 @@
+using LibPeer.Util;
+
 namespace LibPeer.Protocols.Stp.Segments {
 
     public class Control : Segment {
@@ -7,15 +9,13 @@ namespace LibPeer.Protocols.Stp.Segments {
         public ControlCommand command { get; private set; }
 
         protected override void serialise_data (OutputStream stream) {
-            DataOutputStream os = new DataOutputStream (stream);
-            os.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            DataOutputStream os = StreamUtil.get_data_output_stream(stream);
             os.put_byte(command.to_byte());
             os.flush ();
         }
 
         public Control.from_stream(InputStream stream) {
-            DataInputStream ins = new DataInputStream (stream);
-            ins.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            DataInputStream ins = StreamUtil.get_data_input_stream(stream);
             command = ControlCommand.from_byte(ins.read_byte());
         }
 

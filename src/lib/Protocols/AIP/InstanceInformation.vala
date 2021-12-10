@@ -1,5 +1,6 @@
 using LibPeer.Protocols.Mx2;
 using LibPeer.Networks;
+using LibPeer.Util;
 
 namespace LibPeer.Protocols.Aip {
 
@@ -15,8 +16,7 @@ namespace LibPeer.Protocols.Aip {
         }
 
         public void serialise(OutputStream stream) throws IOError, Error {
-            var dos = new DataOutputStream(stream);
-            dos.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            var dos = StreamUtil.get_data_output_stream(stream);
 
             // Write instance reference
             instance_reference.serialise(dos);
@@ -32,8 +32,7 @@ namespace LibPeer.Protocols.Aip {
         }
 
         public InstanceInformation.from_stream(InputStream stream) throws IOError, Error {
-            var dis = new DataInputStream(stream);
-            dis.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            var dis = StreamUtil.get_data_input_stream(stream);
 
             // Read the instance reference
             instance_reference = new InstanceReference.from_stream(dis);

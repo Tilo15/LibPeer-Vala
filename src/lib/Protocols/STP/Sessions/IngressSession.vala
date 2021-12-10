@@ -35,6 +35,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
         private void handle_payload(Payload segment) {
             // TODO: Feature handling
             // Is this a packet we are interested in?
+            //  print(@"Expecting: $(next_expected_sequence_number), got $(segment.sequence_number)\n");
             if(next_expected_sequence_number <= segment.sequence_number) {
                 // Add to reconstruction dictionary
                 reconstruction.set(segment.sequence_number, segment);
@@ -72,6 +73,8 @@ namespace LibPeer.Protocols.Stp.Sessions {
 
             // Start a counter
             uint64 sequence = next_expected_sequence_number;
+
+            //  print(@"Reconstructing from seqno $(sequence)\n");
             
             // Loop until we don't have anything to reconstruct
             for (;reconstruction.has_key(sequence); sequence++) {
@@ -86,6 +89,8 @@ namespace LibPeer.Protocols.Stp.Sessions {
             //  print(@"$(next_expected_sequence_number) => $(sequence)\n");
             // Sequence is now the next expected sequence number
             next_expected_sequence_number = sequence;
+
+            //  print(@"Reconstruction complete: \"$(composer.to_escaped_string())\"\n");
 
             // Return the composed reconstruction
             return composer.to_byte_array();

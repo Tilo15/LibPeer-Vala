@@ -17,7 +17,7 @@ namespace LibPeer.Protocols.Stp.Streams {
 
         public StpOutputStream(EgressSession session) {
             this.session = session;
-            this.session.received_reply.connect(s => reply(new StpInputStream(s)));
+            this.session.received_reply.connect(s => reply(s));
         }
 
         public override bool close (GLib.Cancellable? cancellable) {

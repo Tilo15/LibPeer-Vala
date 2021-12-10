@@ -32,9 +32,9 @@ namespace LibPeer.Protocols.Stp {
             send_thread = new Thread<void>("STP Network Send Thread", send_loop);
         }
 
-        public Negotiation initialise_stream(InstanceReference target, uint8[]? in_reply_to = null) {
+        public Negotiation initialise_stream(InstanceReference target, uint8[]? in_reply_to = null) throws IOError{
             if(muxer.get_peer_info_for_instance(target) == null) {
-                Posix.abort();
+                throw new IOError.HOST_NOT_FOUND("Cannot initialise stream: no known way to reach specified instance");
             }
 
             // Initiate a stream with another peer
@@ -230,12 +230,15 @@ namespace LibPeer.Protocols.Stp {
             // TODO feature stuff
             // Create the session object
             Session session = null;
+            Object stream = null;
             switch (negotiation.direction) {
                 case SessionDirection.INGRESS:
                     session = new IngressSession(negotiation.remote_instance, negotiation.session_id.get_data(), negotiation.ping);
+                    stream = new StpInputStream((IngressSession)session);
                     break;
                 case SessionDirection.EGRESS:
                     session = new EgressSession(negotiation.remote_instance, negotiation.session_id.get_data(), negotiation.ping);
+                    stream = new StpOutputStream((EgressSession)session);
                     break;
             }
 
@@ -248,15 +251,15 @@ namespace LibPeer.Protocols.Stp {
                     if(sessions.has_key(negotiation.in_reply_to)) {
                         Session regarding = sessions.get(negotiation.in_reply_to);
                         if(regarding is EgressSession) {
-                            notify_app(() => ((EgressSession)regarding).received_reply((IngressSession)session));
+                            notify_app(() => ((EgressSession)regarding).received_reply((StpInputStream)stream));
                             break;
                         }
                         break;
                     }
-                    notify_app(() => incoming_stream(new StpInputStream((IngressSession)session)));
+                    notify_app(() => incoming_stream((StpInputStream)stream));
                     break;
                 case SessionDirection.EGRESS:
-                    notify_app(() => negotiation.established(new StpOutputStream((EgressSession)session)));
+                    notify_app(() => negotiation.established((StpOutputStream)stream));
                     break;
             }
             

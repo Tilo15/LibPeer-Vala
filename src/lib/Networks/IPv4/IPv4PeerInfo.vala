@@ -1,5 +1,6 @@
 
 using LibPeer.Networks;
+using LibPeer.Util;
 
 namespace LibPeer.Networks.IPv4 {
 
@@ -20,8 +21,7 @@ namespace LibPeer.Networks.IPv4 {
 
         protected override void build(uint8 data_length, InputStream stream, Bytes network_type) throws Error
         requires (data_length == 6) {
-            DataInputStream dis = new DataInputStream(stream);
-            dis.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            DataInputStream dis = StreamUtil.get_data_input_stream(stream);
             
             for(int i = 0; i < 4; i ++) {
                 address[i] = dis.read_byte();
@@ -32,8 +32,7 @@ namespace LibPeer.Networks.IPv4 {
 
         protected override Bytes get_data_segment() {
             var stream = new MemoryOutputStream(null, GLib.realloc, GLib.free);
-            var dos = new DataOutputStream(stream);
-            dos.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            var dos = StreamUtil.get_data_output_stream(stream);
 
             for(int i = 0; i < 4; i ++) {
                 dos.put_byte(address[i]);

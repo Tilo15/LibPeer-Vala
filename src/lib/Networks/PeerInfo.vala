@@ -23,8 +23,7 @@ namespace LibPeer.Networks
 
         public void serialise(OutputStream stream) throws IOError, Error {
             // Create a stream writer
-            var writer = new DataOutputStream(stream);
-            writer.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            var writer = StreamUtil.get_data_output_stream(stream);
             print("Start serialising PeerInfo\n");
 
             // Get the informational data
@@ -48,12 +47,12 @@ namespace LibPeer.Networks
             // Write the data
             writer.write_bytes(data);
             print("Serialised peer info\n");
+            writer.flush();
         }
         
         public static PeerInfo deserialise(InputStream stream) throws IOError, Error {
             // Create a data input stream
-            var reader = new DataInputStream(stream);
-            reader.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            var reader = StreamUtil.get_data_input_stream(stream);
 
             // Get the length of the network type
             var type_length = reader.read_byte();

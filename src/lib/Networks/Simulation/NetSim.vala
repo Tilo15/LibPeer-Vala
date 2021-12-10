@@ -28,6 +28,10 @@ namespace LibPeer.Networks.Simulation {
         public override GLib.Bytes get_network_identifier () {
             return new Bytes({'N', 'e', 't', 'S', 'i', 'm'});
         }
+
+        public override uint16 get_mtu() {
+            return uint16.MAX;
+        }
     
         public override void bring_up() throws IOError, Error {
             if (up) {

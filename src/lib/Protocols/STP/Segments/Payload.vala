@@ -1,3 +1,5 @@
+using LibPeer.Util;
+
 namespace LibPeer.Protocols.Stp.Segments {
 
     public class Payload : Segment {
@@ -11,8 +13,7 @@ namespace LibPeer.Protocols.Stp.Segments {
         public uint8[] data { get; private set; }
 
         protected override void serialise_data (OutputStream stream) {
-            DataOutputStream os = new DataOutputStream (stream);
-            os.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            DataOutputStream os = StreamUtil.get_data_output_stream(stream);
             os.put_uint64 (sequence_number);
             update_timing();
             os.put_uint64 (timing);
@@ -22,8 +23,7 @@ namespace LibPeer.Protocols.Stp.Segments {
         }
 
         public Payload.from_stream(InputStream stream) {
-            DataInputStream ins = new DataInputStream (stream);
-            ins.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            DataInputStream ins = StreamUtil.get_data_input_stream(stream);
             sequence_number = ins.read_uint64 ();
             timing = ins.read_uint64 ();
             uint32 data_length = ins.read_uint32 ();

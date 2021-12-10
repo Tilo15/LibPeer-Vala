@@ -92,9 +92,11 @@ namespace LibPeer.Protocols.Mx2 {
             // Verify the signature and get plaintext message
             uint8[]? payload = Asymmetric.Signing.verify(signed_payload, origin.verification_key);
 
+            
             if (payload == null) {
                 throw new IOError.FAILED("Payload signature is invalid");
             }
+            
 
             this.payload = payload;
         }

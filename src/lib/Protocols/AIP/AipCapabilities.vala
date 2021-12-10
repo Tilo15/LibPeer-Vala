@@ -9,8 +9,7 @@ namespace LibPeer.Protocols.Aip {
         public bool query_answer { get; set; }
 
         public void serialise(OutputStream stream) throws IOError {
-            var dos = new DataOutputStream(stream);
-            dos.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            var dos = StreamUtil.get_data_output_stream(stream);
 
             var composer = new ByteComposer();
             if(address_info) {
@@ -26,14 +25,16 @@ namespace LibPeer.Protocols.Aip {
             var data = composer.to_byte_array();
 
             dos.put_byte((uint8)data.length);
+            dos.flush();
             dos.write(data);
+            dos.flush();
         }
 
         public AipCapabilities.from_stream(InputStream stream) throws IOError {
-            var dis = new DataInputStream(stream);
-            dis.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            var dis = StreamUtil.get_data_input_stream(stream);
 
             var capability_count = dis.read_byte();
+            print(@"Reading $(capability_count) capabilities\n");
 
             for (var i = 0; i < capability_count; i++) {
                 var byte = dis.read_byte();

@@ -23,6 +23,9 @@ namespace LibPeer.Protocols.Mx2 {
 
         private ConcurrentHashMap<InstanceReference, int> pings = new ConcurrentHashMap<InstanceReference, int>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 
+        private Fragmenter fragmenter = new Fragmenter();
+        private Assembler assembler = new Assembler();
+
         public void register_network(Network network) {
             // Get the network identifier
             Bytes network_identifier = network.get_network_identifier();
@@ -65,8 +68,6 @@ namespace LibPeer.Protocols.Mx2 {
             var inquiry = new Inquiry(destination);
             inquiries.set(inquiry.id, inquiry);
 
-            int packets = 0;
-
             // Loop over each peer to try
             foreach (PeerInfo peer in peers) {
                 // Get peer network identifier
@@ -90,7 +91,7 @@ namespace LibPeer.Protocols.Mx2 {
                     var frame = new Frame(destination, instance.reference, new PathInfo.empty(), packet);
 
                     // Send using the network and peer info
-                    network.send_with_stream(peer, (stream) => frame.serialise(stream, instance));
+                    fragmenter.send_frame(frame, instance, network, peer);
                 }
             }
 
@@ -119,10 +120,10 @@ namespace LibPeer.Protocols.Mx2 {
                 .add_byte_array(data)
                 .to_byte_array();
 
+            //  print(@"MX2_SEND:\"$(new Util.ByteComposer().add_byte_array(payload).to_escaped_string())\"\n");
+
             send_packet(instance, destination, payload);
         }
-
-        // TODO: Send
 
         public int suggested_timeout_for_instance(InstanceReference instance) {
             if(pings.has_key(instance)) {
@@ -145,12 +146,21 @@ namespace LibPeer.Protocols.Mx2 {
             Frame frame = new Frame(destination, instance.reference, access_info.path_info, payload);
 
             // Send the frame over the network
-            access_info.network.send_with_stream(access_info.peer_info, (stream) => frame.serialise(stream, instance));
+            fragmenter.send_frame(frame, instance, access_info.network, access_info.peer_info);
         }
 
-        protected void handle_receiption(Receiption receiption) throws Error, IOError {
+        protected void handle_receiption(Receiption receiption) {
+            // Pass to the assembler
+            var stream = assembler.handle_data(receiption.stream);
+
+            // Did the assembler return a stream?
+            if(stream == null) {
+                // No, message is not fully assembled
+                return;
+            }
+
             // Read the incoming frame
-            Frame frame = new Frame.from_stream(receiption.stream, instances);
+            Frame frame = new Frame.from_stream(stream, instances);
 
             // Get the instance
             Instance instance = instances.get(frame.destination);
@@ -207,6 +217,9 @@ namespace LibPeer.Protocols.Mx2 {
                 // Send the greeting
                 send_packet(instance, frame.origin, greeting);
             }
+            else {
+                print(@"$(instance.application_namespace) != $(application_namespace)\n");
+            }
 
         }
 
@@ -246,6 +259,7 @@ namespace LibPeer.Protocols.Mx2 {
 
         protected void handle_payload(Receiption receiption, Frame frame, Instance instance) throws Error {
             // This is a payload for the next layer to handle, pass it up.
+            //  print(@"MX2_HANDLE:\"$(new Util.ByteComposer().add_byte_array(frame.payload).to_escaped_string())\"\n");
             MemoryInputStream stream = new MemoryInputStream.from_data(frame.payload[1:frame.payload.length]);
             instance.incoming_payload(new Packet(frame.origin, frame.destination, stream));
         }

@@ -1,13 +1,14 @@
 using LibPeer.Protocols.Mx2;
 using LibPeer.Protocols.Stp.Segments;
+using LibPeer.Protocols.Stp.Streams;
 using LibPeer.Util;
 using Gee;
 
 namespace LibPeer.Protocols.Stp.Sessions {
 
-    const int SEGMENT_PAYLOAD_SIZE = 16384;
+    const int SEGMENT_PAYLOAD_SIZE = 14000;
     const int METRIC_WINDOW_SIZE = 4;
-    const int MAX_WINDOW_SIZE = 65536;
+    const int64 MAX_WINDOW_SIZE = 9223372036854775808;
 
     public class EgressSession : Session {
 
@@ -21,15 +22,15 @@ namespace LibPeer.Protocols.Stp.Sessions {
         protected AsyncQueue<Payload> payload_queue = new AsyncQueue<Payload>();
 
         private int redundant_resends = 0;
-        private int window_size = METRIC_WINDOW_SIZE;
-        private uint64 best_ping = 0;
+        private uint64 window_size = METRIC_WINDOW_SIZE;
+        private uint64 best_ping = 10000;
         private uint64 worst_ping = 0;
-        private int adjustment_delta = 0;
+        private int64 adjustment_delta = 0;
         private uint64 last_send = 0;
 
         private uint64 next_sequence_number = 0;
 
-        public signal void received_reply(IngressSession session);
+        public signal void received_reply(StpInputStream stream);
 
         public EgressSession(InstanceReference target, uint8[] session_id, uint64 ping) {
             base(target, session_id, ping);
@@ -67,6 +68,10 @@ namespace LibPeer.Protocols.Stp.Sessions {
             }
         }
 
+        private int64 window_time = 0;
+        private int64 last_window_time = 0;
+        private uint64 last_window_size = 0;
+
         private void handle_acknowledgement(Acknowledgement segment) {
             // Is this segment still in-flight?
             if(!in_flight.has_key(segment.sequence_number)) {
@@ -90,26 +95,39 @@ namespace LibPeer.Protocols.Stp.Sessions {
             var round_trip = (get_monotonic_time()/1000) - segment.timing;
 
             // Are we currently at metric window size?
-            if(window_size == METRIC_WINDOW_SIZE) {
+            //  if(window_size == METRIC_WINDOW_SIZE) {
                 // Yes, add round trip time to the list
                 segment_trips.add(round_trip);
 
                 // Do we have a sample?
                 if(segment_trips.size >= METRIC_WINDOW_SIZE) {
+                    var current_window_time = get_monotonic_time() - window_time;
                     // Update the ping based on the average of the metric segments
-                    uint64 avarage = 0;
+                    uint64 average = segment_trips[0];
                     foreach (var ping in segment_trips) {
-                        avarage += ping;
+                        average = (average + ping)/2;
                     }
-                    avarage = avarage / segment_trips.size;
-                    best_ping = avarage;
+                    
+                    var last = (last_window_size / (double)uint64.max(last_window_time, 1));
+                    var current = (window_size / (double)uint64.max(current_window_time, 1));
 
-                    adjust_window_size(round_trip);
+                    last_window_size = window_size;
+
+                    adjust_window_size(last, current);
+
+
+
+
+                    best_ping = uint64.min(best_ping, average);
+                    worst_ping = uint64.max(worst_ping, average);
+                    segment_trips.clear();
+                    last_window_time = current_window_time;
+                    window_time = get_monotonic_time();
                 }
-                else {
-                    adjust_window_size(round_trip);
-                }
-            }
+            //  }
+            //  else {
+            //      adjust_window_size(round_trip);
+            //  }
             
         }
 
@@ -124,7 +142,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
             }
 
             // Calculate a maximum time value for segments eligable to be resent
-            uint64 max_time = (get_monotonic_time()/1000) - 5000; //(uint64)((worst_ping * Math.log10(redundant_resends + 10) * window_size) * 1000);
+            uint64 max_time = (get_monotonic_time()/1000) - (uint64)(worst_ping + (redundant_resends * 10));
             
             // Do we have any in-flight segments to resend?
             foreach (var segment in in_flight.values) {
@@ -146,69 +164,46 @@ namespace LibPeer.Protocols.Stp.Sessions {
             return base.get_pending_segment();
         }
 
-        private void adjust_window_size(uint64 last_trip) {
-            uint64 last_trip_metric = last_trip / 1000;
+        private void adjust_window_size(double last, double current) {
+            //  print(@"current = $(current); compare = $(last);\n");
 
-            // Is this the worst we have had?
-            if(worst_ping < last_trip) {
-                // Update worst ping metric
-                worst_ping = last_trip;
-            }
-
-            // Has the trip time gotten longer?
-            if (last_trip_metric > best_ping) {
-                // Yes, were we previously increasing the window size?
-                if(adjustment_delta > 0) {
-                    // Yes, stop increasing it
-                    adjustment_delta = 0;
-                }
-                // Were we keeping the window size consistant?
-                else if(adjustment_delta == 0) {
-                    adjustment_delta = -1;
-                }
-                // Were we previously decreasing it?
-                else if(adjustment_delta < 0) {
-                    adjustment_delta *= 2;
-                }
-            }
-            // Did the trip get shorter or stay the same?
-            else if (last_trip_metric <= best_ping) {
-                // Yes, were we previously increasing the window size?
-                if(adjustment_delta > 0) {
-                    // Yes, increase it some more
-                    adjustment_delta *= 2;
-                }
-                // Were we previously keeping the window size consistant?
-                if(adjustment_delta == 0) {
-                    // Yes, start incrrasing ituint64? key
+            if(last > current) {
+                print("\t++\n");
+                if(adjustment_delta < 0) {
                     adjustment_delta = 1;
                 }
-                // Were we previosuly decreasing the window size?
-                if(adjustment_delta < 0) {
-                    // Yes, stop
-                    adjustment_delta = 0;
+                else {
+                    adjustment_delta ++;
                 }
             }
-
-            // Apply the delta
+            else if(current > last) {
+                print("\t  --\n");
+                if(adjustment_delta > 0) {
+                    adjustment_delta = -1;
+                }
+                else {
+                    adjustment_delta --;
+                }
+            }
+            else {
+                print("\t   ==\n");
+                adjustment_delta = 0;
+            }
+            adjustment_delta = int64.min(adjustment_delta, 4);
+            adjustment_delta = int64.max(adjustment_delta, -4);
             window_size += adjustment_delta;
 
             // Is the window size now less than the metric size?
             if(window_size < METRIC_WINDOW_SIZE) {
                 // Yes, reset it to the metric size
                 window_size = METRIC_WINDOW_SIZE;
-
-                // Update the delta so when we have our metric we can start increasing again
-                adjustment_delta = 1;
-
-                // Clear out our trip metrics
-                segment_trips.clear();
             }
             // Is the window size now bigger than the max window size?
             if(window_size > MAX_WINDOW_SIZE) {
                 // Yes, cap it
                 window_size = MAX_WINDOW_SIZE;
             }
+            print(@"WINDOW SIZE: $(window_size)\n");
         }
 
         protected override void close_session(string reason) {
@@ -246,8 +241,9 @@ namespace LibPeer.Protocols.Stp.Sessions {
                     // TODO run through features
                     segment_trackers.set(next_sequence_number, tracker);
                     tracker.add_segment();
-                    int payload_size = data.length < (i+1)*SEGMENT_PAYLOAD_SIZE ? data.length : (i+1)*SEGMENT_PAYLOAD_SIZE;
-                    payload_queue.push(new Payload(next_sequence_number, data[i*SEGMENT_PAYLOAD_SIZE:payload_size]));
+                    int payload_size = int.min(data.length, (i+1)*SEGMENT_PAYLOAD_SIZE);
+                    print(@"data.length: $(data.length); i: $(i); SEGMENT_PAYLOAD_SIZE: $(SEGMENT_PAYLOAD_SIZE); payload_size: $(payload_size)\n");
+                    payload_queue.push(new Payload(next_sequence_number, data[i*SEGMENT_PAYLOAD_SIZE:payload_size].copy()));
                     next_sequence_number ++;
                 }
             }

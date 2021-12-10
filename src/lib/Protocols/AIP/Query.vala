@@ -1,4 +1,5 @@
 using LibPeer.Protocols.Mx2;
+using LibPeer.Util;
 using Gee;
 
 namespace LibPeer.Protocols.Aip {
@@ -18,8 +19,7 @@ namespace LibPeer.Protocols.Aip {
         public signal void on_answer(InstanceInformation answer);
 
         public void serialise(OutputStream stream) throws IOError, Error {
-            var dos = new DataOutputStream(stream);
-            dos.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            var dos = StreamUtil.get_data_output_stream(stream);
 
             // Write query identifier
             dos.write_bytes(identifier);
@@ -42,9 +42,7 @@ namespace LibPeer.Protocols.Aip {
         }
 
         public Query.from_stream(InputStream stream){
-            var dis = new DataInputStream(stream);
-            //  dis.buffer_size = 2;
-            dis.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            var dis = StreamUtil.get_data_input_stream(stream);
 
             // Read the identifier
             print("\tIdentifier\n");

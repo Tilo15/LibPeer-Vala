@@ -1,4 +1,5 @@
 using LibPeer.Protocols.Mx2;
+using LibPeer.Util;
 using Gee;
 
 namespace LibPeer.Protocols.Aip {
@@ -12,8 +13,7 @@ namespace LibPeer.Protocols.Aip {
         public InstanceReference[] path { get; set; }
 
         public void serialise(OutputStream stream) throws IOError {
-            var dos = new DataOutputStream(stream);
-            dos.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            var dos = StreamUtil.get_data_output_stream(stream);
 
             dos.write_bytes(in_reply_to);
 
@@ -28,8 +28,7 @@ namespace LibPeer.Protocols.Aip {
         }
 
         public Answer.from_stream(InputStream stream) throws IOError{
-            var dis = new DataInputStream(stream);
-            dis.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            var dis = StreamUtil.get_data_input_stream(stream);
 
             // What is this in reply to?
             in_reply_to = dis.read_bytes(16);

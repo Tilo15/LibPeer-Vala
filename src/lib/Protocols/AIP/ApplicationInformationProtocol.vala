@@ -53,7 +53,16 @@ namespace LibPeer.Protocols.Aip {
         protected TimeoutMap<InstanceReference, Bytes> pending_group_peers = new TimeoutMap<InstanceReference, Bytes>(120, (a) => a.hash(), (a, b) => a.compare(b) == 0);
         public signal void ready();
 
-        private Gee.List<Query> pending_queries = new Gee.LinkedList<Query>();
+        private class PendingQueryAnswer {
+            public Query query;
+            public InstanceReference instance_reference;
+            public PendingQueryAnswer(Query q, InstanceReference ir) {
+                query = q;
+                instance_reference = ir;
+            }
+        }
+
+        private Gee.List<PendingQueryAnswer> pending_queries = new Gee.LinkedList<PendingQueryAnswer>();
 
         public ApplicationInformationProtocol(Muxer muxer, AipCapabilities? capabilities = null, bool join_all = false) {
             if(capabilities == null) {
@@ -95,6 +104,7 @@ namespace LibPeer.Protocols.Aip {
             new_group_peer.connect((instance_ref, id) => {
                 print("New group peer?\n");
                 if(id.compare(info.namespace_bytes) == 0) {
+                    query_groups.get(info.namespace_bytes).add_peer(instance_ref);
                     print("New group peer\n");
                     info.new_group_peer();
                 }
@@ -198,7 +208,7 @@ namespace LibPeer.Protocols.Aip {
                 print("Sending pending queries");
                 // Clear the list
                 var queries = pending_queries;
-                pending_queries = new Gee.LinkedList<Query>();
+                pending_queries = new Gee.LinkedList<PendingQueryAnswer>();
 
                 // Send pending queries
                 foreach (var query in queries) {
@@ -259,8 +269,7 @@ namespace LibPeer.Protocols.Aip {
             var request_data = new ByteComposer().add_byte(REQUEST_PEERS).to_bytes();
             var request = new Request<Gee.List<InstanceInformation>>();
             send_request(request_data, target).response.connect(s => {
-                var dis = new DataInputStream(s);
-                dis.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+                var dis = StreamUtil.get_data_input_stream(s);
                 // Read number of peers
                 var peer_count = dis.read_byte();
 
@@ -430,7 +439,7 @@ namespace LibPeer.Protocols.Aip {
                 // Are we in this group?
                 if(query_groups.has_key(group_id)) {
                     // Yes, send a reply
-                    queue_query_answer(query);
+                    queue_query_answer(query, instance.reference);
                 }
 
                 // This is a query for a group, forward on to the default group
@@ -448,7 +457,7 @@ namespace LibPeer.Protocols.Aip {
                         // Is this app relevent? TODO: Use a hashmap
                         if(app.namespace_bytes.compare(app_namespace) == 0) {
                             // Yes, answer the query
-                            queue_query_answer(query);
+                            queue_query_answer(query, app.instance);
                         }
                     }
 
@@ -471,7 +480,7 @@ namespace LibPeer.Protocols.Aip {
                         // Is this app relevent and does it have this resource?
                         if(app.namespace_bytes.compare(app_namespace) == 0 && app.resource_set.contains(label)) {
                             // Yes, answer the query
-                            queue_query_answer(query);
+                            queue_query_answer(query, app.instance);
                         }
                     }
 
@@ -483,23 +492,24 @@ namespace LibPeer.Protocols.Aip {
             
         }
 
-        protected void queue_query_answer(Query query) {
+        protected void queue_query_answer(Query query, InstanceReference reference) {
             print("Queue query answer\n");
+            var query_answer = new PendingQueryAnswer(query, reference);
             // Do we have peer info to send yet?
             if(peer_info.size > 0) {
                 print("Query sent immediately\n");
                 // Yes, do it
-                send_query_answer(query);
+                send_query_answer(query_answer);
             }
             else {
                 // No, wait for peer info
-                pending_queries.add(query);
+                pending_queries.add(query_answer);
             }
         }
 
-        protected void send_query_answer(Query query) {
+        private void send_query_answer(PendingQueryAnswer query_answer) {
             // Create some instance information
-            var instance_info = new InstanceInformation(instance.reference, peer_info.to_array());
+            var instance_info = new InstanceInformation(query_answer.instance_reference, peer_info.to_array());
 
             // Serialise the info
             MemoryOutputStream stream = new MemoryOutputStream(null, GLib.realloc, GLib.free);
@@ -512,8 +522,8 @@ namespace LibPeer.Protocols.Aip {
             // Send the instance information in the answer
             var answer = new Answer() {
                 data = new Bytes(buffer),
-                in_reply_to = query.identifier,
-                path = query.return_path
+                in_reply_to = query_answer.query.identifier,
+                path = query_answer.query.return_path
             };
 
             // Send the answer
@@ -542,8 +552,6 @@ namespace LibPeer.Protocols.Aip {
 
             // Handler for query answer
             query.on_answer.connect(answer => {
-                // Add to group
-                query_groups.get(group).add_peer(answer.instance_reference);
 
                 // Are we already connected to this peer?
                 if(reachable_peers.contains(answer.instance_reference)) {

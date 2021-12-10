@@ -20,6 +20,14 @@ namespace LibPeer.Networks.IPv4 {
         private const uint8 DGRAM_INQUIRE = 1;
         private const uint8 DGRAM_INSTANCE = 2;
 
+        private static string[] dns_seeds = new string[] {
+            "libpeer.localresolver",
+            "libpeer.pcthingz.com",
+            "libpeer.unitatem.net",
+            "libpeer.mooo.com",
+            "libpeer.barrow.nz"
+        };
+
         public IPv4(string address, uint16 port) {
             socket = new Socket(SocketFamily.IPV4, SocketType.DATAGRAM, SocketProtocol.UDP);
             multicast_socket = new Socket(SocketFamily.IPV4, SocketType.DATAGRAM, SocketProtocol.UDP);
@@ -33,6 +41,10 @@ namespace LibPeer.Networks.IPv4 {
             return new Bytes({'I', 'P', 'v', '4'});
         }
 
+        public override uint16 get_mtu() {
+            return 511;
+        }
+
         public override void bring_up() throws IOError, Error {
             // Bind the main socket
             socket.bind(socket_address, false);
@@ -43,6 +55,7 @@ namespace LibPeer.Networks.IPv4 {
 
             new Thread<bool>("LibPeer IPv4 Listener", listen);
             new Thread<bool>("LibPeer IPv4 Local Discovery", multicast_listen);
+            new Thread<bool>("LibPeer IPv4 DNS Discovery", dns_discovery);
         }
 
         public override void bring_down() throws IOError, Error {
@@ -51,8 +64,7 @@ namespace LibPeer.Networks.IPv4 {
 
         public override void advertise(InstanceReference instance_reference) throws IOError, Error {
             var stream = new MemoryOutputStream(null, GLib.realloc, GLib.free);
-            var dos = new DataOutputStream(stream);
-            dos.byte_order = DataStreamByteOrder.BIG_ENDIAN;
+            var dos = StreamUtil.get_data_output_stream(stream);
 
             dos.write(multicast_magic_number);
             dos.put_uint16(socket_address.get_port());
@@ -144,7 +156,7 @@ namespace LibPeer.Networks.IPv4 {
                 var inet_address = (InetSocketAddress)address;
 
                 var stream = new MemoryInputStream.from_data(buffer);
-                var dis = new DataInputStream(stream);
+                var dis = StreamUtil.get_data_input_stream(stream);
 
                 var magic_number = dis.read_bytes(multicast_magic_number.length);
                 if(magic_number.compare(new Bytes(multicast_magic_number)) != 0) {
@@ -175,6 +187,56 @@ namespace LibPeer.Networks.IPv4 {
                 
             }
             return false;
+        }
+
+        private bool dns_discovery() {
+            // Loop over each DNS seed
+            var resolver = Resolver.get_default();
+            foreach (var domain in dns_seeds) {
+                // Try and query
+                try {
+                    var results = resolver.lookup_records(domain, ResolverRecordType.TXT);
+                    foreach (var result in results) {
+
+                        foreach (var child in result) {
+                            foreach (var line in child.get_strv()) {
+                                // Is this a LibPeer entry?
+                                if(line.substring(0, 2) != "P2") {
+                                    continue;
+                                }
+
+                                // Split on delimiter
+                                var data = line.split("/");
+
+                                if(data[0] == "P2M") {
+                                    // Seed message
+                                    stderr.printf(@"[LibPeer] DNS Seed MotD ($(domain)): $(data[1])\n");
+                                }
+                                else if(data[0] == "P2D") {
+                                    try {
+                                        print(@"Lookup address to inquire: $(data[1])\n");
+                                        var addresses = resolver.lookup_by_name(data[1]);
+                                        foreach (var address in addresses) {
+                                            inquire(address, int.parse(data[2]));
+                                        }
+                                    }
+                                    catch {}
+                                }
+                                else if(data[0] == "P2A") {
+                                    inquire(new InetAddress.from_string(data[1]), int.parse(data[2]));
+                                }
+                            }
+                        }
+                    }
+                }
+                catch {}
+            }
+            return true;
+        }
+
+        private void inquire(InetAddress address, int port) {
+            print(@"Sending IPv4 inquiry for instances to $(address.to_string()):$(port)\n");
+            socket.send_to(new InetSocketAddress(address, (uint16)port), new uint8[] { DGRAM_INQUIRE });
         }
 
     }

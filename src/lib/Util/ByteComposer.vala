@@ -42,6 +42,19 @@ namespace LibPeer.Util {
             add_byte(0);
             return (string)to_byte_array();
         }
+
+        public string to_escaped_string() {
+            var builder = new StringBuilder();
+            foreach (var byte in to_byte_array()) {
+                if(byte >= 32 && byte <= 126) {
+                    builder.append_unichar((unichar)byte);
+                }
+                else {
+                    builder.append(@"[$(byte)d]");
+                }
+            }
+            return builder.str;
+        }
     }
 
 }
