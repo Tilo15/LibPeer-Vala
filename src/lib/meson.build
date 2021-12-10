@@ -71,5 +71,5 @@ sources += files('Util/ConcurrentHashMap.vala')
 sources += files('Util/TimeoutMap.vala')
 sources += files('Util/Streams.vala')
 
-libpeer = library('peer', sources, dependencies: dependencies)
+libpeer = library('peer', sources, dependencies: dependencies, install: true, install_dir: [true, true, true])
 libpeer_dep = declare_dependency(link_with: libpeer, include_directories: include_directories('.'))
