@@ -35,7 +35,7 @@ namespace LibPeer.Protocols.Aip {
 
             var data_length = dis.read_int32();
             var path_size = dis.read_byte();
-            print(@"Reading $(path_size) instance references\n");
+            //  print(@"Reading $(path_size) instance references\n");
 
             path = new InstanceReference[path_size];
 
@@ -43,7 +43,7 @@ namespace LibPeer.Protocols.Aip {
                 path[i] = new InstanceReference.from_stream(dis);
             }
 
-            print(@"Reading $(data_length) bytes of answer data\n");
+            //  print(@"Reading $(data_length) bytes of answer data\n");
 
             data = dis.read_bytes(data_length);
         }

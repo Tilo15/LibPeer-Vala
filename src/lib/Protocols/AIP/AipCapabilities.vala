@@ -34,7 +34,7 @@ namespace LibPeer.Protocols.Aip {
             var dis = StreamUtil.get_data_input_stream(stream);
 
             var capability_count = dis.read_byte();
-            print(@"Reading $(capability_count) capabilities\n");
+            //  print(@"Reading $(capability_count) capabilities\n");
 
             for (var i = 0; i < capability_count; i++) {
                 var byte = dis.read_byte();

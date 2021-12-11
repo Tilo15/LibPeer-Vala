@@ -24,29 +24,29 @@ namespace LibPeer.Networks
         public void serialise(OutputStream stream) throws IOError, Error {
             // Create a stream writer
             var writer = StreamUtil.get_data_output_stream(stream);
-            print("Start serialising PeerInfo\n");
+            //  print("Start serialising PeerInfo\n");
 
             // Get the informational data
             var type = get_network_identifier();
             var data = get_data_segment();
 
-            print("Serialising type length\n");
+            //  print("Serialising type length\n");
             // Write the length of the network type
             writer.put_byte((uint8)type.length);
 
-            print("Serialising data segment length\n");
+            //  print("Serialising data segment length\n");
             // Write the length of the data segment
             writer.put_byte((uint8)data.length);
 
             var stringType = new ByteComposer().add_bytes(type).to_string(true);
-            print(@"Serialising type: $(stringType) ($(to_string()))\n");
+            //  print(@"Serialising type: $(stringType) ($(to_string()))\n");
             // Write the network identifier
             writer.write_bytes(type);
 
-            print("Serialising data\n");
+            //  print("Serialising data\n");
             // Write the data
             writer.write_bytes(data);
-            print("Serialised peer info\n");
+            //  print("Serialised peer info\n");
             writer.flush();
         }
         

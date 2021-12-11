@@ -214,7 +214,7 @@ namespace LibPeer.Networks.IPv4 {
                                 }
                                 else if(data[0] == "P2D") {
                                     try {
-                                        print(@"Lookup address to inquire: $(data[1])\n");
+                                        //  print(@"Lookup address to inquire: $(data[1])\n");
                                         var addresses = resolver.lookup_by_name(data[1]);
                                         foreach (var address in addresses) {
                                             inquire(address, int.parse(data[2]));
@@ -237,6 +237,23 @@ namespace LibPeer.Networks.IPv4 {
         private void inquire(InetAddress address, int port) {
             print(@"Sending IPv4 inquiry for instances to $(address.to_string()):$(port)\n");
             socket.send_to(new InetSocketAddress(address, (uint16)port), new uint8[] { DGRAM_INQUIRE });
+        }
+
+        public static uint16 find_free_port(string ip_address) {
+            uint16 port = 2000;
+            var address = new InetAddress.from_string(ip_address);
+            while(true) {
+                try {
+                    var socket_addr = new InetSocketAddress(address, port);
+                    var socket = new Socket(SocketFamily.IPV4, SocketType.DATAGRAM, SocketProtocol.UDP);
+                    socket.bind(socket_addr, false);
+                    socket.close();
+                    return port;
+                }
+                catch {
+                    port++;
+                }
+            }
         }
 
     }

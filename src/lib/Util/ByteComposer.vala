@@ -24,6 +24,15 @@ namespace LibPeer.Util {
             return this;
         }
 
+        public ByteComposer add_string(string str, bool remove_null_termination = true) {
+            var data = (uint8[])str;
+            if(remove_null_termination) {
+                data = data[0:-1];
+            }
+            add_byte_array(data);
+            return this;
+        }
+
         public uint8[] to_byte_array() {
             uint8[] data = {};
             foreach (Bytes bytes in components) {

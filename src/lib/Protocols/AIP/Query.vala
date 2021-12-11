@@ -32,9 +32,7 @@ namespace LibPeer.Protocols.Aip {
 
             // Serialise the return path
             foreach (var reference in return_path) {
-                print("Instance reference serialisation for return path begins\n");
                 reference.serialise(dos);
-                print("Instance reference serialisation for return path ends\n");
             }
 
             // Write the query data
@@ -45,19 +43,13 @@ namespace LibPeer.Protocols.Aip {
             var dis = StreamUtil.get_data_input_stream(stream);
 
             // Read the identifier
-            print("\tIdentifier\n");
             identifier = dis.read_bytes(16);
 
             // Read header data
-            print("\tHops\n");
             hops = dis.read_byte();
-            print("\tMax Replies\n");
             max_replies = dis.read_byte();
-            print("\tData length\n");
             var data_length = dis.read_uint16();
-            print(@"\tQuery data length $(data_length)\n");
             var return_path_size = dis.read_byte();
-            print(@"\tReturn path size $(return_path_size)\n");
 
             // Deserialise return path
             return_path = new InstanceReference[return_path_size];
@@ -65,11 +57,9 @@ namespace LibPeer.Protocols.Aip {
                 return_path[i] = new InstanceReference.from_stream(dis);
             }
 
-            print("\tRead query data\n");
 
             // Read the query data
             data = dis.read_bytes(data_length);
-            print(@"\tDone $(data.length)\n");
         }
 
         internal void append_return_hop(InstanceReference instance) {

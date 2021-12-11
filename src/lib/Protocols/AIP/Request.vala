@@ -7,7 +7,6 @@ namespace LibPeer.Protocols.Aip {
         public bool completed { get; set; }
 
         public virtual signal void response(T data) {
-            print("Yeehaw\n");
             completed = true;
         }
     }
