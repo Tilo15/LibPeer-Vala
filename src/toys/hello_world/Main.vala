@@ -11,9 +11,12 @@ namespace HelloWorldApp {
 
         public static int main(string[] args) {
             var t = new Main();
-            t.initialise("hello-world");
             while (true) {};
             return 0;
+        }
+
+        public Main() {
+            initialise("hello-world");
         }
         
         protected override void on_incoming_stream (StpInputStream stream) {

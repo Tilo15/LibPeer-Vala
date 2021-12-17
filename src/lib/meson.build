@@ -72,5 +72,23 @@ sources += files('Util/TimeoutMap.vala')
 sources += files('Util/Streams.vala')
 sources += files('Application/Application.vala')
 
-libpeer = library('peer', sources, dependencies: dependencies, install: true, install_dir: [true, true, true])
+libpeer = shared_library('libpeer', sources,
+    name_prefix: '',
+    dependencies: dependencies,
+    install: true,
+    vala_gir: 'LibPeer-1.0.gir',
+    install_dir: [true, true, true, true]
+)
 libpeer_dep = declare_dependency(link_with: libpeer, include_directories: include_directories('.'))
+
+pkg = import('pkgconfig')
+pkg.generate(libpeer,
+    version : '0.1',
+    name : 'libpeer',)
+    
+g_ir_compiler = find_program('g-ir-compiler')
+custom_target('libpeer typelib', command: [g_ir_compiler, '--shared-library=libpeer.so', '--output', '@OUTPUT@', meson.current_build_dir() / 'LibPeer-1.0.gir'],
+              output: 'LibPeer-1.0.typelib',
+              depends: libpeer,
+              install: true,
+              install_dir: get_option('libdir') / 'girepository-1.0')
