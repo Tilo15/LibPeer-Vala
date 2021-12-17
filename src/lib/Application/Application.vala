@@ -15,30 +15,37 @@ namespace LibPeer {
         protected Instance instance { get; private set; }
         protected Network[] networks { get; private set; }
 
-        public abstract string application_namespace { get; }
+        protected bool is_initialised { get; private set; }
 
         construct {
+            is_initialised = false;
             muxer = new Muxer ();
-            
-            networks = configure_networks();
-            discoverer = new ApplicationInformationProtocol(muxer);
-            
-            foreach (var network in networks) {
-                network.bring_up();
-                discoverer.add_network (network);
-            }
-
-            instance = muxer.create_instance (application_namespace);
-            information = new ApplicationInformation.from_instance (instance);
-            information.new_group_peer.connect(on_new_discovery_peer);
-            instance.incoming_greeting.connect(on_peer_available);
-            transport = new StreamTransmissionProtocol(muxer, instance);
-            transport.incoming_stream.connect(on_incoming_stream);
-            discoverer.add_application (information);
         }
+        
+        protected void initialise(string application_namespace, Network[]? network_list = null) {
+            lock(is_initialised) {
+                if(is_initialised) {
+                    warning("Application already initialised, skipping");
+                    return;
+                }
 
-        protected virtual Network[] configure_networks() {
-            return new Network[] { new IPv4.IPv4("0.0.0.0", IPv4.IPv4.find_free_port("0.0.0.0")) };
+                discoverer = new ApplicationInformationProtocol(muxer);
+                networks = network_list ?? new Network[] { new IPv4.IPv4("0.0.0.0", IPv4.IPv4.find_free_port("0.0.0.0")) };
+                
+                foreach (var network in networks) {
+                    network.bring_up();
+                    discoverer.add_network (network);
+                }
+    
+                instance = muxer.create_instance (application_namespace);
+                information = new ApplicationInformation.from_instance (instance);
+                information.new_group_peer.connect(on_new_discovery_peer);
+                instance.incoming_greeting.connect(on_peer_available);
+                transport = new StreamTransmissionProtocol(muxer, instance);
+                transport.incoming_stream.connect(on_incoming_stream);
+                discoverer.add_application (information);
+                is_initialised = true;
+            }
         }
 
         protected virtual void on_new_discovery_peer() {

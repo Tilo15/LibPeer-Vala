@@ -9,10 +9,9 @@ namespace HelloWorldApp {
 
         private uint8[] message = new uint8[] { 'H', 'e', 'l', 'l', 'o', ',', 'w', 'o', 'r', 'l', 'd', '!' };
 
-        public override string application_namespace { get { return "hello-world"; }}
-
         public static int main(string[] args) {
             var t = new Main();
+            t.initialise("hello-world");
             while (true) {};
             return 0;
         }
