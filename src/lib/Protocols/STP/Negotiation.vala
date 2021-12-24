@@ -5,7 +5,7 @@ using Gee;
 
 namespace LibPeer.Protocols.Stp {
 
-    public class Negotiation {
+    public class Negotiation : Object {
         public Bytes session_id { get; internal set; }
 
         public Bytes in_reply_to { get; internal set; }
