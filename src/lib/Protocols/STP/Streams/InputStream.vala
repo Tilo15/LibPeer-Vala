@@ -47,12 +47,45 @@ namespace LibPeer.Protocols.Stp.Streams {
             return true;
         }
 
+        //  public override ssize_t read(uint8[] buffer, GLib.Cancellable? cancellable = null) throws GLib.IOError {
+        //      print(@"Read: $(buffer.length)\n");
+        //      data_mutex.lock();
+
+        //      var canc = cancellable ?? new Cancellable();
+        //      canc.cancelled.connect(() => {
+        //          print("STP read cancelled\n");
+        //          data_mutex.lock();
+        //          data_cond.broadcast();
+        //          data_mutex.unlock();
+        //      });
+
+        //      while(unread_data.length < buffer.length && (session.open && pending_data == 0 && !canc.is_cancelled())) {
+        //          data_cond.wait(data_mutex);
+        //      }
+        //      var available_data = unread_data.length < buffer.length ? unread_data.length : buffer.length;
+        //      //  print(@"Read $(available_data) of $(buffer.length) bytes\n");
+        //      for(int i = 0; i < available_data; i++) {
+        //          buffer[i] = unread_data[i];
+        //      }
+        //      //  print(@"Read:\n\t\"$(new Util.ByteComposer().add_byte_array(buffer).to_escaped_string())\"\n\tof: \"$(new Util.ByteComposer().add_byte_array(unread_data).to_escaped_string())\"\n");
+        //      unread_data = unread_data[available_data:unread_data.length];
+        //      data_mutex.unlock();
+
+
+
+        //      return available_data;
+        //  }
+
+
         public override ssize_t read(uint8[] buffer, GLib.Cancellable? cancellable = null) throws GLib.IOError {
             data_mutex.lock();
-            while(unread_data.length < buffer.length && (session.open && pending_data == 0)) {
+
+            // TODO implement cancellable
+
+            while(unread_data.length == 0 && session.open) {
                 data_cond.wait(data_mutex);
             }
-            var available_data = unread_data.length < buffer.length ? unread_data.length : buffer.length;
+            var available_data = int.min(unread_data.length, buffer.length);
             //  print(@"Read $(available_data) of $(buffer.length) bytes\n");
             for(int i = 0; i < available_data; i++) {
                 buffer[i] = unread_data[i];
@@ -61,9 +94,13 @@ namespace LibPeer.Protocols.Stp.Streams {
             unread_data = unread_data[available_data:unread_data.length];
             data_mutex.unlock();
 
-
-
             return available_data;
+        }
+
+        public bool has_unread_data {
+            get {
+                return session.open && unread_data.length > 0;
+            }
         }
 
     }

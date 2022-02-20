@@ -48,12 +48,16 @@ namespace LibPeer {
             }
         }
 
+        protected void inquire(InstanceInformation peer) {
+            muxer.inquire(instance, peer.instance_reference, peer.connection_methods);
+        }
+
         protected virtual void on_new_discovery_peer() {
             find_any_peer();
         }
 
         protected virtual void on_peer_found(InstanceInformation peer) {
-            muxer.inquire(instance, peer.instance_reference, peer.connection_methods);
+            inquire(peer);
         }
 
         protected abstract void on_peer_available(InstanceReference peer);
