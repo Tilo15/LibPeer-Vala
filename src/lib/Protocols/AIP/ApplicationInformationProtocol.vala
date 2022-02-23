@@ -20,6 +20,7 @@ namespace LibPeer.Protocols.Aip {
         internal const uint8 QUERY_GROUP = 'G';
         internal const uint8 QUERY_APPLICATION = 'A';
         internal const uint8 QUERY_APPLICATION_RESOURCE = 'R';
+        internal const uint8 QUERY_APPLICATION_AUTHENTICATED_PEER = 'M';
 
         internal const uint8 CAPABILITY_ADDRESS_INFO = 'A';
         internal const uint8 CAPABILITY_FIND_PEERS = 'P';
@@ -134,6 +135,23 @@ namespace LibPeer.Protocols.Aip {
 
             // Create the query
             var query = new Query(new ByteComposer().add_byte(QUERY_APPLICATION_RESOURCE).add_bytes(resource_identifier).add_bytes(app.namespace_bytes).to_bytes());
+
+            // Send the query
+            initiate_query(query, query_groups.get(app.namespace_bytes));
+
+            // Return the query
+            return query;
+        }
+
+        public Query find_application_authenticated_peer(ApplicationInformation app, AuthenticatedPeerIdentity peer) {
+            // We must be in a query group for this application
+            assert(query_groups.has_key(app.namespace_bytes));
+
+            // Create a challenge the peer can authenticate itself against
+            var challenge = new AuthenticatedPeerChallenge(peer);
+
+            // Create the query
+            var query = new Query(new ByteComposer().add_byte(QUERY_APPLICATION_AUTHENTICATED_PEER).add_byte_array(challenge.serialise()).add_bytes(app.namespace_bytes).to_bytes());
 
             // Send the query
             initiate_query(query, query_groups.get(app.namespace_bytes));
@@ -479,6 +497,30 @@ namespace LibPeer.Protocols.Aip {
                     foreach (var app in application_information) {
                         // Is this app relevent and does it have this resource?
                         if(app.namespace_bytes.compare(app_namespace) == 0 && app.resource_set.contains(label)) {
+                            // Yes, answer the query
+                            queue_query_answer(query, app.instance);
+                        }
+                    }
+
+                    // Forward onto the application group
+                    send_query(query, query_groups.get(app_namespace));
+                }
+            }
+            else if(query_type == QUERY_APPLICATION_AUTHENTICATED_PEER) {
+                print("Handle query: Application authenticated peer\n");
+                // Read the challenge (TODO: tidy up size)
+                var challenge_data = query_data[0:Sodium.Asymmetric.Signing.PUBLIC_KEY_BYTES + AuthenticatedPeerChallenge.CHALLENGE_LENGTH];
+                var challenge = new AuthenticatedPeerChallenge.from_data(challenge_data);
+
+                // Read the application namespace
+                var app_namespace = new Bytes(query_data[33:query_data.length]);
+
+                // Are we in a group for this namespace?
+                if(query_groups.has_key(app_namespace)) {
+                    // Yes, find relevent ApplicationInformation
+                    foreach (var app in application_information) {
+                        // Is this app relevent and does it have the requested identity?
+                        if(app.namespace_bytes.compare(app_namespace) == 0 && app.authenticated_identity?.identity.equals(challenge.identity)) {
                             // Yes, answer the query
                             queue_query_answer(query, app.instance);
                         }

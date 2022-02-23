@@ -14,6 +14,7 @@ namespace LibPeer.Protocols.Aip {
         }}
 
         public HashSet<Bytes> resource_set = new Gee.HashSet<Bytes>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+        public AuthenticatedPeerKey? authenticated_identity { get; set; }
 
         public ApplicationInformation(InstanceReference iref, string app_namespace) {
             instance = iref;
