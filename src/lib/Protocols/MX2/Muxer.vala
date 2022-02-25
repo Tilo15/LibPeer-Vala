@@ -10,6 +10,7 @@ namespace LibPeer.Protocols.Mx2 {
         private const uint8 PACKET_INQUIRE = 5;
         private const uint8 PACKET_GREET = 6;
         private const uint8 PACKET_PAYLOAD = 22;
+        private const uint8 PACKET_HEARTBEAT = 7;
 
         private const int FALLBACK_PING_VALUE = 120000;
         

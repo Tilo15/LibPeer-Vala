@@ -1,0 +1,10 @@
+prefix=/home/bbarrow/Projects/LibPeer-Vala
+srcdir=/home/bbarrow/Projects/LibPeer-Vala/src
+libdir=${prefix}/lib64
+includedir=${prefix}/include
+
+Name: libpeer
+Description: LibPeer: libpeer
+Version: 0.1
+Libs: -L${prefix}/lib -lpeer
+Cflags: -I${prefix}/lib -I${srcdir}/lib
