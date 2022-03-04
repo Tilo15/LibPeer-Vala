@@ -43,6 +43,8 @@ namespace LibPeer.Protocols.Aip {
         protected QueryGroup default_group = new QueryGroup (20);
         protected ConcurrentHashMap<Bytes, QueryGroup> query_groups = new ConcurrentHashMap<Bytes, QueryGroup>((a) => a.hash(), (a, b) => a.compare(b) == 0);
         protected HashSet<InstanceReference> reachable_peers = new HashSet<InstanceReference>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+        protected ConcurrentHashMap<AuthenticatedPeerIdentity, InstanceReference> identity_instace = new ConcurrentHashMap<AuthenticatedPeerIdentity, InstanceReference>((a) => a.hash(), (a, b) => a.equals(b));
+        protected ConcurrentHashMap<AuthenticatedPeerIdentity, AuthenticatedPeerKey> identity_key = new ConcurrentHashMap<AuthenticatedPeerIdentity, AuthenticatedPeerKey>((a) => a.hash(), (a, b) => a.equals(b));
 
         protected TimeoutMap<Bytes, Query> queries = new TimeoutMap<Bytes, Query>(120, (a) => a.hash(), (a, b) => a.compare(b) == 0);
         protected TimeoutMap<Bytes, int> query_response_count = new TimeoutMap<Bytes, int>(120, (a) => a.hash(), (a, b) => a.compare(b) == 0);
@@ -57,9 +59,11 @@ namespace LibPeer.Protocols.Aip {
         private class PendingQueryAnswer {
             public Query query;
             public InstanceReference instance_reference;
-            public PendingQueryAnswer(Query q, InstanceReference ir) {
+            public AuthenticatedPeerChallenge? challenge;
+            public PendingQueryAnswer(Query q, InstanceReference ir, AuthenticatedPeerChallenge? ch) {
                 query = q;
                 instance_reference = ir;
+                challenge = ch;
             }
         }
 
@@ -355,8 +359,14 @@ namespace LibPeer.Protocols.Aip {
                 var query = queries.get(answer.in_reply_to);
 
                 // Get instance information from the answer
-                var answer_stream = new MemoryInputStream.from_bytes(answer.data);
-                var info = new InstanceInformation.from_stream(answer_stream);
+                InstanceInformation info;
+                if(answer.type == AnswerType.INSTANCE_INFO) {
+                    var answer_stream = new MemoryInputStream.from_bytes(answer.data);
+                    info = new InstanceInformation.from_stream(answer_stream);
+                }
+                else if(answer.type == AnswerType.PEER_CERTIFICATE) {
+                    info = new AuthenticatedPeerCertificate.verify(answer.data, query.)
+                }
 
                 // Notify the query's subject listeners
                 query.on_answer(info);
@@ -551,19 +561,30 @@ namespace LibPeer.Protocols.Aip {
 
         private void send_query_answer(PendingQueryAnswer query_answer) {
             // Create some instance information
-            var instance_info = new InstanceInformation(query_answer.instance_reference, peer_info.to_array());
+            var instance_info = new InstanceInformation.from_info(query_answer.instance_reference, peer_info.to_array());
 
-            // Serialise the info
+            AnswerType type;
+            type = AnswerType.INSTANCE_INFO;
             MemoryOutputStream stream = new MemoryOutputStream(null, GLib.realloc, GLib.free);
-            // print("Serialising instance info\n");
-            instance_info.serialise(stream);
-            stream.close();
-            uint8[] buffer = stream.steal_data();
+            // Determine what sort of answer to make
+            if(query_answer.challenge != null) {
+                type = AnswerType.PEER_CERTIFICATE;
+                var key = identity_key.get(query_answer.challenge.identity);
+                var cert = new AuthenticatedPeerCertificate.from_challenge(query_answer.challenge, key, instance_info);
+                cert.serialise(stream);
+            }
+            else {
+                type = AnswerType.INSTANCE_INFO;
+                instance_info.serialise(stream);
+            }
+            
+            var buffer = stream.steal_data();
             buffer.length = (int)stream.get_data_size();
 
             // Send the instance information in the answer
             var answer = new Answer() {
                 data = new Bytes(buffer),
+                type = type,
                 in_reply_to = query_answer.query.identifier,
                 path = query_answer.query.return_path
             };

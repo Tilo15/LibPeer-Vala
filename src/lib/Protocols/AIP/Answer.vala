@@ -4,9 +4,16 @@ using Gee;
 
 namespace LibPeer.Protocols.Aip {
 
+    public enum AnswerType {
+        INSTANCE_INFO = 0,
+        PEER_CERTIFICATE = 1
+    }
+
     public class Answer {
 
         public Bytes in_reply_to { get; set; }
+
+        public AnswerType type { get; set; }
 
         public Bytes data { get; set; }
 
@@ -24,6 +31,7 @@ namespace LibPeer.Protocols.Aip {
                 reference.serialise(dos);
             }
 
+            dos.put_byte((uint8)type);
             dos.write(data.get_data());
         }
 
@@ -43,8 +51,7 @@ namespace LibPeer.Protocols.Aip {
                 path[i] = new InstanceReference.from_stream(dis);
             }
 
-            //  print(@"Reading $(data_length) bytes of answer data\n");
-
+            type = (AnswerType)dis.read_byte();
             data = dis.read_bytes(data_length);
         }
 

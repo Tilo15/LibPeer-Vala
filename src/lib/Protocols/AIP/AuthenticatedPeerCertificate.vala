@@ -1,16 +1,14 @@
 
 namespace LibPeer.Protocols.Aip {
 
-    public class AuthenticatedPeerCertificate {
+    public class AuthenticatedPeerCertificate : InstanceInformation {
 
         private uint8[] raw { get; set; }
-
-        public InstanceInformation instance_info { get; private set; }
         public uint8[] challenge_data { get; private set; }
 
         public AuthenticatedPeerCertificate.from_challenge(AuthenticatedPeerChallenge challenge, AuthenticatedPeerKey key, InstanceInformation info)
         requires (challenge.identity.public_key == key.public_key) {
-            instance_info = info;
+            copy_from(info);
             challenge_data = challenge.challenge_data;
             serialise_sign(key);
         }
@@ -19,7 +17,7 @@ namespace LibPeer.Protocols.Aip {
             var stream = new MemoryOutputStream(null, GLib.realloc, GLib.free);
             var dos = new DataOutputStream(stream);
 
-            instance_info.serialise(stream);
+            base.serialise(stream);
             dos.write(challenge_data);
 
             dos.close();
@@ -29,8 +27,8 @@ namespace LibPeer.Protocols.Aip {
             raw = buffer.copy();
         }
 
-        public uint8[] serialise() {
-            return raw.copy();
+        public override void serialise(OutputStream stream) {
+            stream.write(raw);
         }
 
         public AuthenticatedPeerCertificate.verify(uint8[] data, AuthenticatedPeerIdentity identity) {
@@ -38,7 +36,7 @@ namespace LibPeer.Protocols.Aip {
             var stream = new MemoryInputStream.from_data(verified);
             var dis = new DataInputStream(stream);
 
-            instance_info = new InstanceInformation.from_stream(dis);
+            fill_from_stream(stream);
             challenge_data = dis.read_bytes(AuthenticatedPeerChallenge.CHALLENGE_LENGTH).get_data();
 
             dis.close();

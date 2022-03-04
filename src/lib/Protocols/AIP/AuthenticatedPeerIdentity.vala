@@ -23,6 +23,10 @@ namespace LibPeer.Protocols.Aip {
             return new Bytes(public_key).compare(new Bytes(other.public_key)) == 0;
         }
 
+        public uint hash() {
+            return new Bytes(public_key).hash();
+        }
+
     }
 
 
