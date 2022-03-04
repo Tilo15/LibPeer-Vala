@@ -6,7 +6,13 @@ namespace LibPeer.Protocols.Stp.Sessions {
 
     public abstract class Session : Object {
 
+        public const int64 HEARTBEAT_INTERVAL = 60;
+        public const int64 HEARTBEAT_TIMEOUT = 330;
+
         protected AsyncQueue<Segment> outgoing_segment_queue = new AsyncQueue<Segment>();
+
+        private int64 last_heartbeat = 0;
+        private Thread<bool> heart;
 
         public bool open { get; protected set; }
 
@@ -22,6 +28,9 @@ namespace LibPeer.Protocols.Stp.Sessions {
             this.target = target;
             identifier = session_id;
             initial_ping = ping;
+            last_heartbeat = get_heartbeat_timestamp();
+
+            heart = new Thread<bool>("STP Session Heartbeat", heartbeat);
         }
 
         public virtual bool has_pending_segment() {
@@ -36,6 +45,10 @@ namespace LibPeer.Protocols.Stp.Sessions {
             outgoing_segment_queue.push(segment);
         }
 
+        public virtual void segment_failure(Segment segment, Error error) {
+            close_session(@"Could not send segment over the network: $(error.message)");
+        }
+
         public abstract void process_segment(Segment segment);
 
         protected virtual void close_session(string reason) {
@@ -48,6 +61,24 @@ namespace LibPeer.Protocols.Stp.Sessions {
             //  outgoing_segment_queue = new AsyncQueue<Segment>();
             queue_segment(new Control(ControlCommand.COMPLETE));
             close_session("Stream closed by local application");
+        }
+
+        private bool heartbeat() {
+            while(open) {
+                Posix.sleep((uint)HEARTBEAT_INTERVAL);
+                if(get_heartbeat_timestamp() > last_heartbeat + HEARTBEAT_TIMEOUT ) {
+                    queue_segment(new Control(ControlCommand.ABORT));
+                    close_session("The remote peer died");
+                    return false;
+                }
+                queue_segment(new Control(ControlCommand.HEARTBEAT));
+            }
+
+            return true;
+        }
+
+        private int64 get_heartbeat_timestamp() {
+            return get_monotonic_time()/1000000;
         }
     }
 

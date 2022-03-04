@@ -28,7 +28,8 @@ namespace LibPeer.Protocols.Stp.Segments {
     public enum ControlCommand {
         COMPLETE,
         ABORT,
-        NOT_CONFIGURED;
+        NOT_CONFIGURED,
+        HEARTBEAT;
 
         public static ControlCommand from_byte(uint8 byte) {
             switch(byte) {
@@ -38,6 +39,8 @@ namespace LibPeer.Protocols.Stp.Segments {
                     return ABORT;
                 case 0x15:
                     return NOT_CONFIGURED;
+                case 0x16:
+                    return HEARTBEAT;
                 default:
                     assert_not_reached();
             }
@@ -51,6 +54,8 @@ namespace LibPeer.Protocols.Stp.Segments {
                     return 0x18;
                 case NOT_CONFIGURED:
                     return 0x15;
+                case HEARTBEAT:
+                    return 0x16;
                 default:
                     assert_not_reached();
             }

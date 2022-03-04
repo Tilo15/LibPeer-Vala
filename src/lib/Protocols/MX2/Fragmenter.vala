@@ -7,7 +7,7 @@ namespace LibPeer.Protocols.Mx2 {
 
         private uint64 message_seqn = 0;
 
-        public void send_frame(Frame frame, Instance instance, Network network, PeerInfo info) throws IOError, Error {
+        public void send_frame(Frame frame, Instance? instance, Network network, PeerInfo info) throws IOError, Error {
             // Get the size for the fragments
             var fragment_size = network.get_mtu() - Fragment.HEADER_LENGTH;
 

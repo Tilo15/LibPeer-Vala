@@ -30,7 +30,7 @@ namespace LibPeer {
                 }
 
                 discoverer = new ApplicationInformationProtocol(muxer);
-                networks = network_list ?? new Network[] { new IPv4.IPv4("0.0.0.0", IPv4.IPv4.find_free_port("0.0.0.0")) };
+                networks = network_list ?? new Network[] { IPv4.IPv4.automatic() };
                 
                 foreach (var network in networks) {
                     network.bring_up();

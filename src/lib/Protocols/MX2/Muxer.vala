@@ -7,10 +7,6 @@ namespace LibPeer.Protocols.Mx2 {
 
     public class Muxer {
 
-        private const uint8 PACKET_INQUIRE = 5;
-        private const uint8 PACKET_GREET = 6;
-        private const uint8 PACKET_PAYLOAD = 22;
-
         private const int FALLBACK_PING_VALUE = 120000;
         
         private ConcurrentHashMap<Bytes, HashSet<Network>> networks = new ConcurrentHashMap<Bytes, HashSet<Network>>((a) => a.hash(), (a, b) => a.compare(b) == 0);
@@ -82,13 +78,12 @@ namespace LibPeer.Protocols.Mx2 {
                 foreach (Network network in networks.get(network_identifier)) {
                     // Create the inquire packet
                     uint8[] packet = new ByteComposer()
-                        .add_byte(PACKET_INQUIRE)
                         .add_bytes(inquiry.id)
                         .add_char_array(instance.application_namespace.to_utf8())
                         .to_byte_array();
 
                     // Create a frame containing an inquire packet
-                    var frame = new Frame(destination, instance.reference, new PathInfo.empty(), packet);
+                    var frame = new Frame(destination, instance.reference, new PathInfo.empty(), PayloadType.INQUIRE, packet);
 
                     // Send using the network and peer info
                     fragmenter.send_frame(frame, instance, network, peer);
@@ -115,14 +110,7 @@ namespace LibPeer.Protocols.Mx2 {
         }
 
         public void send(Instance instance, InstanceReference destination, uint8[] data) throws IOError, Error {
-            uint8[] payload = new ByteComposer()
-                .add_byte(PACKET_PAYLOAD)
-                .add_byte_array(data)
-                .to_byte_array();
-
-            //  print(@"MX2_SEND:\"$(new Util.ByteComposer().add_byte_array(payload).to_escaped_string())\"\n");
-
-            send_packet(instance, destination, payload);
+            send_packet(instance, destination, PayloadType.DATA, data);
         }
 
         public int suggested_timeout_for_instance(InstanceReference instance) {
@@ -132,7 +120,7 @@ namespace LibPeer.Protocols.Mx2 {
             return FALLBACK_PING_VALUE;
         }
 
-        protected void send_packet(Instance instance, InstanceReference destination, uint8[] payload) throws IOError, Error {
+        protected void send_packet(Instance instance, InstanceReference destination, PayloadType payload_type, uint8[] payload) throws IOError, Error {
             // Do we know the destination instance?
             if(!remote_instance_mapping.has_key(destination)) {
                 // No, throw an error
@@ -143,10 +131,19 @@ namespace LibPeer.Protocols.Mx2 {
             InstanceAccessInfo access_info = remote_instance_mapping.get(destination);
 
             // Create a frame
-            Frame frame = new Frame(destination, instance.reference, access_info.path_info, payload);
+            Frame frame = new Frame(destination, instance.reference, access_info.path_info, payload_type, payload);
 
             // Send the frame over the network
             fragmenter.send_frame(frame, instance, access_info.network, access_info.peer_info);
+        }
+
+        protected void dispel_peer(Receiption receiption, Frame frame) throws Error {
+            print(@"Dispelling peer at $(receiption.peer_info)\n");
+            // Create a frame
+            Frame dispel_frame = new Frame(frame.origin, frame.destination, frame.via.return_path, PayloadType.DISPEL, new uint8[0], FrameCrypto.NONE);
+
+            // Send the frame over the network
+            fragmenter.send_frame(dispel_frame, null, receiption.network, receiption.peer_info);
         }
 
         protected void handle_receiption(Receiption receiption) {
@@ -162,60 +159,68 @@ namespace LibPeer.Protocols.Mx2 {
             // Read the incoming frame
             Frame frame = new Frame.from_stream(stream, instances);
 
+            // Make a decision based on how well the frame was read
+            switch (frame.read_status) {
+                case FrameReadStatus.DECRYPTION_ERROR:
+                case FrameReadStatus.INVALID_SIGNATURE:
+                case FrameReadStatus.MALFORMED_FRAME:
+                    return;
+                case FrameReadStatus.INSTANCE_NOT_FOUND:
+                    dispel_peer(receiption, frame);
+                    return;
+            }
+
             // Get the instance
             Instance instance = instances.get(frame.destination);
 
-            // Read the packet type
-            uint8 packet_type = frame.payload[0];
-
-            // Determine what to do
-            switch (packet_type) {
-                case PACKET_INQUIRE:
+            // Determine what to do with the payload
+            switch (frame.payload_type) {
+                case PayloadType.INQUIRE:
                     handle_inquire(receiption, frame, instance);
                     break;
                 
-                case PACKET_GREET:
+                case PayloadType.GREET:
                     handle_greet(receiption, frame, instance);
                     break;
 
-                case PACKET_PAYLOAD:
+                case PayloadType.DATA:
                     handle_payload(receiption, frame, instance);
                     break;
 
+                case PayloadType.DISPEL:
+                    handle_dispel(receiption, frame, instance);
+                    break;
+
                 default:
-                    throw new IOError.INVALID_DATA("Invalid packet type");
+                    throw new IOError.INVALID_DATA("Invalid payload type");
             }
             
         }
 
         protected void handle_inquire(Receiption receiption, Frame frame, Instance instance) throws Error {
             // Next 16 bytes of packet is the inquiriy ID
-            uint8[] inquiry_id = frame.payload[1:17];
+            uint8[] inquiry_id = frame.payload[0:16];
 
             // Rest of the packet indicates the desired application namespace
             string application_namespace = new ByteComposer()
-                .add_byte_array(frame.payload[17:frame.payload.length])
+                .add_byte_array(frame.payload[16:frame.payload.length])
                 .to_string();
 
             // Does the application namespace match the instance's
             if (instance.application_namespace == application_namespace) {
                 // Yes, save this instance's information locally for use later
-                remote_instance_mapping.set(frame.origin, new InstanceAccessInfo() { 
-                    network = receiption.network,
-                    peer_info = receiption.peer_info,
-                    path_info = frame.via.return_path
-                });
+                if(!remote_instance_mapping.has_key(frame.origin)) {
+                    remote_instance_mapping.set(frame.origin, new InstanceAccessInfo() { 
+                        network = receiption.network,
+                        peer_info = receiption.peer_info,
+                        path_info = frame.via.return_path
+                    });
+                }
 
                 print(@"Saved instance mapping with address $(receiption.peer_info.to_string()) due to inquiry\n");
 
-                // Create the greeting
-                uint8[] greeting = new ByteComposer()
-                    .add_byte(PACKET_GREET)
-                    .add_byte_array(inquiry_id)
-                    .to_byte_array();
-
                 // Send the greeting
-                send_packet(instance, frame.origin, greeting);
+                send_packet(instance, frame.origin, PayloadType.GREET, inquiry_id);
             }
             else {
                 print(@"$(instance.application_namespace) != $(application_namespace)\n");
@@ -237,7 +242,7 @@ namespace LibPeer.Protocols.Mx2 {
                 print(@"Saved instance mapping with address $(receiption.peer_info.to_string()) due to greeting\n");
 
                 // Get the inquiry id
-                Bytes inquiry_id = new Bytes(frame.payload[1:17]);
+                Bytes inquiry_id = new Bytes(frame.payload[0:16]);
 
                 // Determine the ping
                 int ping = FALLBACK_PING_VALUE;
@@ -257,10 +262,21 @@ namespace LibPeer.Protocols.Mx2 {
             }
         }
 
+        private void handle_dispel(Receiption receiption, Frame frame, Instance instance) throws Error {
+            print("Dispelled instance due to request from remote machine\n");
+            // Received a dispel frame
+            remote_instance_mapping.unset(frame.origin);
+        }
+
         protected void handle_payload(Receiption receiption, Frame frame, Instance instance) throws Error {
-            // This is a payload for the next layer to handle, pass it up.
-            //  print(@"MX2_HANDLE:\"$(new Util.ByteComposer().add_byte_array(frame.payload).to_escaped_string())\"\n");
-            MemoryInputStream stream = new MemoryInputStream.from_data(frame.payload[1:frame.payload.length]);
+            // Update access info - where we receive data from is always where we should send it back
+            remote_instance_mapping.set(frame.origin, new InstanceAccessInfo() { 
+                network = receiption.network,
+                peer_info = receiption.peer_info,
+                path_info = frame.via.return_path
+            });
+
+            MemoryInputStream stream = new MemoryInputStream.from_data(frame.payload);
             instance.incoming_payload(new Packet(frame.origin, frame.destination, stream));
         }
 

@@ -15,6 +15,8 @@ namespace LibPeer.Networks.IPv4 {
         private InetSocketAddress multicast_address;
         private HashSet<InstanceReference> advertised_instances = new HashSet<InstanceReference>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 
+        public bool local_only { get; private set; }
+
         private static uint8[] multicast_magic_number = new uint8[] {'L', 'i', 'b', 'P', 'e', 'e', 'r', '2', '-', 'I', 'P', 'v', '4', ':'};
         private const uint8 DGRAM_DATA = 0;
         private const uint8 DGRAM_INQUIRE = 1;
@@ -28,13 +30,18 @@ namespace LibPeer.Networks.IPv4 {
             "libpeer.barrow.nz"
         };
 
-        public IPv4(string address, uint16 port) {
+        public IPv4(string address, uint16 port, bool local_only = false) {
+            this.local_only = local_only;
             socket = new Socket(SocketFamily.IPV4, SocketType.DATAGRAM, SocketProtocol.UDP);
             multicast_socket = new Socket(SocketFamily.IPV4, SocketType.DATAGRAM, SocketProtocol.UDP);
             var inet_address = new InetAddress.from_string(address);
             socket_address = new InetSocketAddress(inet_address, port);
             local_peer = new IPv4PeerInfo(socket_address);
             multicast_address = new InetSocketAddress(new InetAddress.from_string("224.0.0.3"), 1199);
+        }
+
+        public static IPv4 automatic(bool local_only = false) {
+            return new IPv4("0.0.0.0", IPv4.find_free_port("0.0.0.0"), local_only);
         }
 
         public override Bytes get_network_identifier() {
@@ -79,10 +86,20 @@ namespace LibPeer.Networks.IPv4 {
             advertised_instances.add(instance_reference);
         }
 
+        private bool address_allowed(InetAddress address) {
+            return !local_only || address.is_site_local || address.is_link_local;
+        }
+
         public override void send(uint8[] bytes, PeerInfo peer_info) throws IOError, Error {
             var ipv4_info = (IPv4PeerInfo)peer_info;
+
+            var address = ipv4_info.to_socket_address();
+            if(!address_allowed(address.address)) {
+                throw new IOError.NETWORK_UNREACHABLE("IPv4 address of remote peer is not site-local or link-local and network has been set to local-only mode.");
+            }
+
             var buffer = new ByteComposer().add_byte(DGRAM_DATA).add_byte_array(bytes).to_byte_array();
-            socket.send_to(ipv4_info.to_socket_address(), buffer);
+            socket.send_to(address, buffer);
         }
 
         private bool listen() {
@@ -92,13 +109,18 @@ namespace LibPeer.Networks.IPv4 {
                     var buffer = new uint8[65536];
                     SocketAddress address;
                     var size = socket.receive_from(out address, buffer);
+                    var ip_address = (InetSocketAddress)address;
                     buffer.length = (int)size;
+
+                    if(!address_allowed(ip_address.address)) {
+                        continue;
+                    }
 
                     // Put the datagram into a stream
                     var stream = new MemoryInputStream.from_data(buffer);
 
                     // Create peer info
-                    var info = new IPv4PeerInfo((InetSocketAddress)address);
+                    var info = new IPv4PeerInfo(ip_address);
 
                     // Read the datagram type
                     var type = new uint8[1];
@@ -235,6 +257,10 @@ namespace LibPeer.Networks.IPv4 {
         }
 
         private void inquire(InetAddress address, int port) {
+            if(!address_allowed(address)) {
+                print(@"Not sending IPv4 inquiry for instances to $(address.to_string()):$(port) as network has been set to local-only mode\n");
+                return;
+            }
             print(@"Sending IPv4 inquiry for instances to $(address.to_string()):$(port)\n");
             socket.send_to(new InetSocketAddress(address, (uint16)port), new uint8[] { DGRAM_INQUIRE });
         }
