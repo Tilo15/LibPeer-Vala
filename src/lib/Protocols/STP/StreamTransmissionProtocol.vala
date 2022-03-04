@@ -290,7 +290,12 @@ namespace LibPeer.Protocols.Stp {
         private void send_pending_segement(Session session) {
             var segment = session.get_pending_segment();
             var message = new SegmentMessage(new Bytes(session.identifier), segment);
-            send_packet(session.target, s => message.serialise(s));
+            try {
+                send_packet(session.target, s => message.serialise(s));
+            }
+            catch (Error e) {
+                session.segment_failure(segment, e);
+            }
         }
 
         private void notify_app(ThreadFunc<void> func) {
@@ -306,7 +311,13 @@ namespace LibPeer.Protocols.Stp {
             private InstanceReference target;
     
             protected override void do_task () {
-                stp.send_packet(target, s => message.serialise(s));
+                try {
+                    stp.send_packet(target, s => message.serialise(s));
+                }
+                catch(Error e) {
+                    printerr(@"Error retransmitting packet: $(e.message)\n");
+                    cancel();
+                }
             }
     
             public MessageRetransmitter(StreamTransmissionProtocol stp, InstanceReference target, Message message, uint64 interval = 10000, int repeat = 12) {

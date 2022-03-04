@@ -16,7 +16,7 @@ namespace HelloWorldApp {
         }
 
         public Main() {
-            initialise("hello-world");
+            initialise("hello-world", new LibPeer.Networks.Network[] { LibPeer.Networks.IPv4.IPv4.automatic(true) });
         }
         
         protected override void on_incoming_stream (StpInputStream stream) {

@@ -45,6 +45,10 @@ namespace LibPeer.Protocols.Stp.Sessions {
             outgoing_segment_queue.push(segment);
         }
 
+        public virtual void segment_failure(Segment segment, Error error) {
+            close_session(@"Could not send segment over the network: $(error.message)");
+        }
+
         public abstract void process_segment(Segment segment);
 
         protected virtual void close_session(string reason) {
