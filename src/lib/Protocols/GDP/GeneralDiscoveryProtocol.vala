@@ -24,6 +24,7 @@ namespace LibPeer.Protocols.Gdp {
 
         protected uint8[] public_key;
         protected uint8[] private_key;
+        protected uint8[] encryption_key;
         protected ConcurrentHashMap<Bytes, InstanceReference> peers = new ConcurrentHashMap<Bytes, InstanceReference>((a) => a.hash(), (a, b) => a.compare(b) == 0);
         protected ConcurrentHashMap<Bytes, GdpApplication> applications = new ConcurrentHashMap<Bytes, GdpApplication>((a) => a.hash(), (a, b) => a.compare(b) == 0);
         protected HashSet<PeerInfo> peer_info = new HashSet<PeerInfo>((a) => a.hash(), (a, b) => a.equals(b));
@@ -50,7 +51,7 @@ namespace LibPeer.Protocols.Gdp {
             network.advertise(instance.reference);
         }
 
-        public void query_general(GdpApplication app, bool allow_routing = true) throws Error {
+        public void query_general(GdpApplication app, uint8[]? private_data = null, bool allow_routing = true) throws Error {
             var query = new Query() {
                 sender_id = public_key,
                 max_hops = QUERY_MAX_HOPS,
@@ -59,11 +60,16 @@ namespace LibPeer.Protocols.Gdp {
                 resource_hash = EMPTY_RESOURCE,
                 challenge = app.create_app_challenge()
             };
+            if(private_data != null) {
+                var nonce = new uint8[Sodium.Symmetric.NONCE_BYTES];
+                Sodium.Random.random_bytes(nonce);
+                query.add_private_blob(private_data, encryption_key, nonce);
+            }
             query.sign(private_key);
             send_query(query);
         }
 
-        public void query_resource(GdpApplication app, uint8[] resource_identifier, Challenge challenge, bool allow_routing = true) throws Error requires (resource_identifier.length == ChecksumType.SHA512.get_length()) {
+        public void query_resource(GdpApplication app, uint8[] resource_identifier, Challenge challenge, uint8[]? private_data = null, bool allow_routing = true) throws Error requires (resource_identifier.length == ChecksumType.SHA512.get_length()) {
             var query = new Query() {
                 sender_id = public_key,
                 max_hops = QUERY_MAX_HOPS,
@@ -72,6 +78,11 @@ namespace LibPeer.Protocols.Gdp {
                 resource_hash = resource_identifier,
                 challenge = challenge
             };
+            if(private_data != null) {
+                var nonce = new uint8[Sodium.Symmetric.NONCE_BYTES];
+                Sodium.Random.random_bytes(nonce);
+                query.add_private_blob(private_data, encryption_key, nonce);
+            }
             query.sign(private_key);
             send_query(query);
         }
@@ -85,6 +96,7 @@ namespace LibPeer.Protocols.Gdp {
             public_key = new uint8[Signing.PUBLIC_KEY_BYTES];
             private_key = new uint8[Signing.SECRET_KEY_BYTES];
             Signing.generate_keypair(public_key, private_key);
+            encryption_key = Sodium.Symmetric.generate_key();
 
             // Attach signal handlers
             instance.incoming_greeting.connect(handle_greeting);
@@ -172,7 +184,7 @@ namespace LibPeer.Protocols.Gdp {
                     }
                 }
                 else {
-                    app.challenged(new Bytes(summary.resource_hash), summary.challenge);
+                    app.challenged(summary.resource_hash, summary.challenge);
                     if(summary.challenge.solved) {
                         answer(stream, query, app);
                     }
@@ -218,6 +230,7 @@ namespace LibPeer.Protocols.Gdp {
             }
             else if(query.compare_sender(public_key) && applications.has_key(answer.query_summary.namespace_hash)) {
                 var app = applications.get(answer.query_summary.namespace_hash);
+                answer.query_summary.read_private_blob(encryption_key);
                 app.query_answered(answer);
             }
         }

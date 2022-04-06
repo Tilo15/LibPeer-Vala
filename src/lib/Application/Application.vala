@@ -68,8 +68,8 @@ namespace LibPeer {
             discoverer.query_general(information);
         }
 
-        protected void search_for_resource_peer(Bytes resource_identifier, Challenge challenge) throws Error {
-            discoverer.query_resource(information, resource_identifier.get_data(), challenge);
+        protected void search_for_resource_peer(Bytes resource_identifier, Challenge challenge, uint8[]? private_data = null) throws Error {
+            discoverer.query_resource(information, resource_identifier.get_data(), challenge, private_data);
         }
 
         protected Negotiation establish_stream(InstanceReference peer) throws Error {

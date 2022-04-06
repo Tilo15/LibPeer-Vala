@@ -15,7 +15,11 @@ namespace LibPeer.Protocols.Gdp {
 
         public Bytes namespace_hash { get; set; }
         
-        public uint8[] resource_hash { get; set; }
+        public Bytes resource_hash { get; set; }
+
+        public uint8[]? private_blob { get; set; }
+
+        private uint8[] encrypted_private_blob { get; set; }
         
         public Challenge challenge { get; set; }
 
@@ -42,8 +46,9 @@ namespace LibPeer.Protocols.Gdp {
             max_hops = main_query.max_hops;
             allow_routing = main_query.allow_routing;
             namespace_hash = new Bytes(main_query.namespace_hash);
-            resource_hash = main_query.resource_hash;
+            resource_hash = new Bytes(main_query.resource_hash);
             challenge = main_query.challenge;
+            encrypted_private_blob = main_query.private_blob;
         }
 
         public bool validate() {
@@ -71,6 +76,15 @@ namespace LibPeer.Protocols.Gdp {
 
         public bool has_visited(Bytes sender_id) {
             return sender_ids.contains(sender_id);
+        }
+
+        internal void read_private_blob(uint8[] key) {
+            if(encrypted_private_blob.length == 0) {
+                return;
+            }
+            var nonce = encrypted_private_blob[0:Sodium.Symmetric.NONCE_BYTES];
+            var ciphertext = encrypted_private_blob[Sodium.Symmetric.NONCE_BYTES:encrypted_private_blob.length];
+            private_blob = Sodium.Symmetric.decrypt(ciphertext, key, nonce);
         }
     }
 
