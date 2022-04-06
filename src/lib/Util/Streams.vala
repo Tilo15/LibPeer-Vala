@@ -1,6 +1,6 @@
 namespace LibPeer.Util {
 
-    public class StreamUtil {
+    internal class StreamUtil {
 
         public static DataInputStream get_data_input_stream(InputStream stream) {
             if(stream is DataInputStream) {
