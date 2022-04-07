@@ -3,23 +3,26 @@ namespace LibPeer.Protocols.Mx2 {
 
     public class PathInfo {
 
-        public unowned List<InstanceReference> repeaters { get; protected set; }
+        public Gee.LinkedList<InstanceReference> repeaters { get; private set; }
 
         public PathInfo return_path {
             owned get {
-                var path = repeaters.copy_deep((m) => m);
-                path.reverse();
-                return new PathInfo(path);
+                var path = repeaters.to_array();
+                var reversed = new Gee.LinkedList<InstanceReference>();
+                for(var i = reversed.size; i > 0; i++) {
+                    reversed.add(path[i-1]);
+                }
+                return new PathInfo(reversed);
             }
         }
 
-        public PathInfo(List<InstanceReference> repeaters) {
+        public PathInfo(Gee.LinkedList<InstanceReference> repeaters) {
             this.repeaters = repeaters;
         }
 
         public void serialise(OutputStream stream) throws IOError {
             // Write number of repeaters
-            stream.write({(uint8)repeaters.length()});
+            stream.write({(uint8)repeaters.size});
 
             // Write the repeaters
             foreach (var repeater in repeaters) {
@@ -32,16 +35,16 @@ namespace LibPeer.Protocols.Mx2 {
             uint8 repeater_count = stream.read_bytes(1).get(0);
 
             // Create list
-            repeaters = new List<InstanceReference>();
+            repeaters = new Gee.LinkedList<InstanceReference>();
 
             // Read repeaters
             for (uint8 i = 0; i < repeater_count; i++) {
-                repeaters.append(new InstanceReference.from_stream(stream));
+                repeaters.add(new InstanceReference.from_stream(stream));
             }
         }
 
         public PathInfo.empty() {
-            this(new List<InstanceReference>());
+            this(new Gee.LinkedList<InstanceReference>());
         }
     }
 

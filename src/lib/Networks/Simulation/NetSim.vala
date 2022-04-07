@@ -89,6 +89,10 @@ namespace LibPeer.Networks.Simulation {
             conduit.send_packet(this.identifier, new Bytes(info.identifier), new Bytes(bytes));
         }
 
+        public override bool peer_globally_routable(PeerInfo peer_info) {
+            return false;
+        }
+
         internal void receive_data(Bytes origin, Bytes data) {
             // Create the peer info
             var peer_info = new NetSimPeerInfo(origin);

@@ -53,37 +53,30 @@ namespace LibPeer.Protocols.Gdp {
         
         public Mx2.InstanceReference instance_reference { get; set; }
 
-        public PeerInfo[] queryer_connection_methods { get; set; }
-
-        public PeerInfo[] answerer_connection_methods { get; set; }
+        public PeerInfo[] connection_methods { get; set; }
 
         public RouterInfo.from_stream(DataInputStream stream) throws IOError, Error {
             instance_reference = new Mx2.InstanceReference.from_stream (stream);
 
             var qcms = stream.read_byte();
-            queryer_connection_methods = new PeerInfo[qcms];
+            connection_methods = new PeerInfo[qcms];
             for(var i = 0; i > qcms; i++) {
-                queryer_connection_methods[i] = PeerInfo.deserialise(stream);
-            }
-
-            var acms = stream.read_byte();
-            answerer_connection_methods = new PeerInfo[acms];
-            for(var i = 0; i > qcms; i++) {
-                answerer_connection_methods[i] = PeerInfo.deserialise(stream);
+                connection_methods[i] = PeerInfo.deserialise(stream);
             }
         }
 
         public void serialise(DataOutputStream stream) throws Error {
 
             instance_reference.serialise(stream);
-            stream.put_byte((uint8)queryer_connection_methods.length);
-            foreach(var method in queryer_connection_methods) {
+            stream.put_byte((uint8)connection_methods.length);
+            foreach(var method in connection_methods) {
                 method.serialise(stream);
             }
-            stream.put_byte((uint8)answerer_connection_methods.length);
-            foreach(var method in answerer_connection_methods) {
-                method.serialise(stream);
-            }
+        }
+
+        public RouterInfo(Mx2.InstanceReference instance_reference, PeerInfo[] connection_methods) {
+            this.instance_reference = instance_reference;
+            this.connection_methods = connection_methods;
         }
     }
 

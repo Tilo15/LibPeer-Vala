@@ -99,6 +99,7 @@ namespace LibPeer.Protocols.Mx2 {
 
             if(new Bytes(magic).compare(new Bytes(MAGIC_NUMBER)) != 0) {
                 read_status = FrameReadStatus.MALFORMED_FRAME;
+                return;
             }
 
             // Read the destination

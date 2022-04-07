@@ -1,4 +1,5 @@
 using Sodium.Asymmetric;
+using LibPeer.Networks;
 
 namespace LibPeer.Protocols.Gdp {
 

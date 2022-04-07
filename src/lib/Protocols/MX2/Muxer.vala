@@ -7,20 +7,20 @@ namespace LibPeer.Protocols.Mx2 {
 
     public class Muxer {
 
-        private const int FALLBACK_PING_VALUE = 120000;
+        protected const int FALLBACK_PING_VALUE = 120000;
         
-        private ConcurrentHashMap<Bytes, HashSet<Network>> networks = new ConcurrentHashMap<Bytes, HashSet<Network>>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+        protected ConcurrentHashMap<Bytes, HashSet<Network>> networks = new ConcurrentHashMap<Bytes, HashSet<Network>>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 
-        private ConcurrentHashMap<InstanceReference, Instance> instances = new ConcurrentHashMap<InstanceReference, Instance>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+        protected ConcurrentHashMap<InstanceReference, Instance> instances = new ConcurrentHashMap<InstanceReference, Instance>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 
-        private ConcurrentHashMap<InstanceReference, InstanceAccessInfo> remote_instance_mapping = new ConcurrentHashMap<InstanceReference, InstanceAccessInfo>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+        protected ConcurrentHashMap<InstanceReference, InstanceAccessInfo> remote_instance_mapping = new ConcurrentHashMap<InstanceReference, InstanceAccessInfo>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 
-        private ConcurrentHashMap<Bytes, Inquiry> inquiries = new ConcurrentHashMap<Bytes, Inquiry>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+        protected ConcurrentHashMap<Bytes, Inquiry> inquiries = new ConcurrentHashMap<Bytes, Inquiry>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 
-        private ConcurrentHashMap<InstanceReference, int> pings = new ConcurrentHashMap<InstanceReference, int>((a) => a.hash(), (a, b) => a.compare(b) == 0);
+        protected ConcurrentHashMap<InstanceReference, int> pings = new ConcurrentHashMap<InstanceReference, int>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 
-        private Fragmenter fragmenter = new Fragmenter();
-        private Assembler assembler = new Assembler();
+        protected Fragmenter fragmenter = new Fragmenter();
+        protected Assembler assembler = new Assembler();
 
         public void register_network(Network network) {
             // Get the network identifier
@@ -59,7 +59,7 @@ namespace LibPeer.Protocols.Mx2 {
             return instance;
         }
 
-        public Inquiry inquire(Instance instance, InstanceReference destination, PeerInfo[] peers) throws IOError, Error {
+        public Inquiry inquire(Instance instance, InstanceReference destination, PeerInfo[] peers, PathInfo? path = null) throws IOError, Error {
             // Create an inquiry
             var inquiry = new Inquiry(destination);
             inquiries.set(inquiry.id, inquiry);
@@ -83,7 +83,7 @@ namespace LibPeer.Protocols.Mx2 {
                         .to_byte_array();
 
                     // Create a frame containing an inquire packet
-                    var frame = new Frame(destination, instance.reference, new PathInfo.empty(), PayloadType.INQUIRE, packet);
+                    var frame = new Frame(destination, instance.reference, path ?? new PathInfo.empty(), PayloadType.INQUIRE, packet);
 
                     // Send using the network and peer info
                     fragmenter.send_frame(frame, instance, network, peer);
@@ -92,8 +92,6 @@ namespace LibPeer.Protocols.Mx2 {
 
             return inquiry;
         }
-
-        // TODO: Add Inquire via paths
 
         public PeerInfo? get_peer_info_for_instance(InstanceReference instance) {
             if (remote_instance_mapping.has_key(instance)) {
@@ -146,7 +144,7 @@ namespace LibPeer.Protocols.Mx2 {
             fragmenter.send_frame(dispel_frame, null, receiption.network, receiption.peer_info);
         }
 
-        protected void handle_receiption(Receiption receiption) {
+        protected virtual void handle_receiption(Receiption receiption) {
             // Pass to the assembler
             var stream = assembler.handle_data(receiption.stream);
 
@@ -169,7 +167,9 @@ namespace LibPeer.Protocols.Mx2 {
                     dispel_peer(receiption, frame);
                     return;
             }
+        }
 
+        protected void handle_frame(Frame frame, Receiption receiption) {
             // Get the instance
             Instance instance = instances.get(frame.destination);
 
@@ -262,7 +262,7 @@ namespace LibPeer.Protocols.Mx2 {
             }
         }
 
-        private void handle_dispel(Receiption receiption, Frame frame, Instance instance) throws Error {
+        protected void handle_dispel(Receiption receiption, Frame frame, Instance instance) throws Error {
             print("Dispelled instance due to request from remote machine\n");
             // Received a dispel frame
             remote_instance_mapping.unset(frame.origin);

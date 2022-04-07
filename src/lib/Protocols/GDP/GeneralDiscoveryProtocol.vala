@@ -28,10 +28,10 @@ namespace LibPeer.Protocols.Gdp {
         protected ConcurrentHashMap<Bytes, InstanceReference> peers = new ConcurrentHashMap<Bytes, InstanceReference>((a) => a.hash(), (a, b) => a.compare(b) == 0);
         protected ConcurrentHashMap<Bytes, GdpApplication> applications = new ConcurrentHashMap<Bytes, GdpApplication>((a) => a.hash(), (a, b) => a.compare(b) == 0);
         protected HashSet<PeerInfo> peer_info = new HashSet<PeerInfo>((a) => a.hash(), (a, b) => a.equals(b));
-        protected AsyncQueue<QueryBase> query_queue = new AsyncQueue<QueryBase>();
         protected Muxer muxer;
         protected Instance instance;
         protected StreamTransmissionProtocol transport;
+        private AsyncQueue<QueryQueueItem> query_queue = new AsyncQueue<QueryQueueItem>();
 
         public bool is_ready {
             get {
@@ -66,7 +66,7 @@ namespace LibPeer.Protocols.Gdp {
                 query.add_private_blob(private_data, encryption_key, nonce);
             }
             query.sign(private_key);
-            send_query(query);
+            queue_query(query);
         }
 
         public void query_resource(GdpApplication app, uint8[] resource_identifier, Challenge challenge, uint8[]? private_data = null, bool allow_routing = true) throws Error requires (resource_identifier.length == ChecksumType.SHA512.get_length()) {
@@ -84,7 +84,7 @@ namespace LibPeer.Protocols.Gdp {
                 query.add_private_blob(private_data, encryption_key, nonce);
             }
             query.sign(private_key);
-            send_query(query);
+            queue_query(query);
         }
 
         public GeneralDiscoveryProtocol(Muxer muxer) {
@@ -193,7 +193,7 @@ namespace LibPeer.Protocols.Gdp {
 
             // Should we forward this?
             if(summary.should_forward(new Bytes(public_key))) {
-                forward_query(query);
+                forward_query(query, stream.origin);
             }
         }
 
@@ -211,6 +211,10 @@ namespace LibPeer.Protocols.Gdp {
                 return;
             }
 
+            process_answer(answer);
+        }
+
+        protected virtual void process_answer(Answer answer) {
             var query = answer.query;
             var forward = false;
             while(query is WrappedQuery) {
@@ -250,25 +254,63 @@ namespace LibPeer.Protocols.Gdp {
             send_command(stream.origin, Command.ANSWER, answer_obj.serialise);
         }
 
-        private void forward_query(QueryBase query) throws Error {
+        protected virtual void forward_query(QueryBase query, InstanceReference origin) throws Error {
             var wrapped = new WrappedQuery(public_key, query);
             wrapped.sign(private_key);
-            send_query(query);
+            var network = muxer.get_target_network_for_instance(origin);
+            var peer = muxer.get_peer_info_for_instance(origin);
+            if(network.peer_globally_routable(peer)) {
+                queue_query(query);
+            }
+            else {
+                queue_query(query, network);
+            }
         }
 
-        private void send_query(QueryBase query) throws Error {
-            query_queue.push(query);
+        protected void queue_query(QueryBase query, Network? single = null, Network? exclude = null) throws Error {
+            query_queue.push(new QueryQueueItem(query, exclude, single));
         }
 
         private bool queue_running = false;
+
+        private class QueryQueueItem {
+            public QueryBase query { get; set; }
+            public Network? exclude_network { get; set; }
+            public Network? single_network { get; set; }
+
+            public bool check_peer(InstanceReference peer, Muxer muxer) {
+                if(exclude_network != null) {
+                    if(muxer.get_target_network_for_instance(peer) == exclude_network){
+                        return false;
+                    }
+                }
+                if(single_network != null) {
+                    if(muxer.get_target_network_for_instance(peer) != single_network){
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            public QueryQueueItem(QueryBase query, Network? exclude = null, Network? single = null) {
+                this.query = query;
+                exclude_network = exclude;
+                single_network = single;
+            }
+        }
+
         private void start_queue_worker() {
             queue_running = true;
             ThreadFunc<bool> queue_worker = () => {
                 while (queue_running) {
-                    var query = query_queue.pop();
+                    var queue_item = query_queue.pop();
+                    var query = queue_item.query;
                     var summary = new QuerySummary(query);
                     try {
                         foreach(var peer in peers) {
+                            if(!queue_item.check_peer(peer.value, muxer)) {
+                                continue;
+                            }
                             if(!summary.has_visited(peer.key)) {
                                 send_command(peer.value, Command.QUERY, query.serialise);
                             }
@@ -285,7 +327,7 @@ namespace LibPeer.Protocols.Gdp {
             new Thread<bool>(@"GDP-Query-Sender", queue_worker);
         }
 
-        private PeerInfo[] get_peer_info() {
+        protected PeerInfo[] get_peer_info() {
             lock(peer_info) {
                 var output = new PeerInfo[peer_info.size];
                 int i = 0;

@@ -102,6 +102,16 @@ namespace LibPeer.Networks.IPv4 {
             socket.send_to(address, buffer);
         }
 
+        public override bool peer_globally_routable(PeerInfo peer_info) {
+            if(local_only) {
+                return false;
+            }
+
+            var ipv4_info = (IPv4PeerInfo)peer_info;
+            InetAddress address = ipv4_info.to_socket_address().address;
+            return !(address.is_link_local || address.is_loopback || address.is_multicast || address.is_site_local);
+        }
+
         private bool listen() {
             while(true) {
                 try {

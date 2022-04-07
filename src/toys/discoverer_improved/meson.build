@@ -15,3 +15,8 @@ sources = files('MainIP.vala')
 sources += files('Discoverer.vala')
 
 executable('discoverer2_ipv4', sources, dependencies: dependencies)
+
+sources = files('MainRouted.vala')
+sources += files('Discoverer.vala')
+
+executable('discoverer2_routed', sources, dependencies: dependencies)

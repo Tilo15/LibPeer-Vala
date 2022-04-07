@@ -8,9 +8,6 @@ namespace LibPeer.Protocols.Mx2 {
         private uint64 message_seqn = 0;
 
         public void send_frame(Frame frame, Instance? instance, Network network, PeerInfo info) throws IOError, Error {
-            // Get the size for the fragments
-            var fragment_size = network.get_mtu() - Fragment.HEADER_LENGTH;
-
             // Serialise the entire frame
             MemoryOutputStream stream = new MemoryOutputStream(null, GLib.realloc, GLib.free);
             frame.serialise(stream, instance);
@@ -18,6 +15,13 @@ namespace LibPeer.Protocols.Mx2 {
             uint8[] buffer = stream.steal_data();
             buffer.length = (int)stream.get_data_size();
             
+            send_buffer(buffer, network, info);
+        }
+
+        public void send_buffer(uint8[] buffer, Network network, PeerInfo info) throws Error {
+            // Get the size for the fragments
+            var fragment_size = network.get_mtu() - Fragment.HEADER_LENGTH;
+
             // Calculate number of needed fragments
             uint32 fragment_count = (buffer.length / fragment_size) + uint32.min(buffer.length % fragment_size, 1);
 

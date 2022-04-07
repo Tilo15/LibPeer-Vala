@@ -1,3 +1,4 @@
+using LibPeer.Networks;
 
 namespace LibPeer.Protocols.Gdp {
 
@@ -9,7 +10,9 @@ namespace LibPeer.Protocols.Gdp {
 
         public bool allow_routing { get; set; }
 
-        public Gee.LinkedList<RouterInfo> routing_path { get; set; }
+        private Gee.LinkedList<RouterInfo> routing_path { get; set; }
+
+        public RouterInfo? first_router { get; set; }
 
         private Gee.HashSet<Bytes> sender_ids = new Gee.HashSet<Bytes>((a) => a.hash(), (a, b) => a.compare(b) == 0);
 
@@ -36,6 +39,7 @@ namespace LibPeer.Protocols.Gdp {
                 q = wrapped.query;
                 if(wrapped.router_info != null) {
                     routing_path.add(wrapped.router_info);
+                    first_router = wrapped.router_info;
                 }
                 sender_ids.add(new Bytes(wrapped.sender_id));
             }
@@ -65,6 +69,10 @@ namespace LibPeer.Protocols.Gdp {
             return actual_hops < max_hops && validate() && !has_visited(sender_id);
         }
 
+        public bool is_routed() {
+            return routing_path.size > 0;
+        }
+
         public bool is_null_resource() {
             for(var i = 0; i < resource_hash.length; i++) {
                 if(resource_hash[0] != 0) {
@@ -85,6 +93,24 @@ namespace LibPeer.Protocols.Gdp {
             var nonce = encrypted_private_blob[0:Sodium.Symmetric.NONCE_BYTES];
             var ciphertext = encrypted_private_blob[Sodium.Symmetric.NONCE_BYTES:encrypted_private_blob.length];
             private_blob = Sodium.Symmetric.decrypt(ciphertext, key, nonce);
+        }
+
+        public RouterInfo[] get_routers() requires (routing_path.size > 0) {
+            var info = new RouterInfo[routing_path.size];
+            var index = 0;
+            for(var i = routing_path.size; i > 0; i--) {
+                info[index] = routing_path.get(i-1);
+                index++;
+            }
+            return info;
+        }
+
+        public Mx2.PathInfo get_path_info() requires (routing_path.size > 0) {
+            var nodes = new Gee.LinkedList<Mx2.InstanceReference>();
+            for(var i = routing_path.size; i > 0; i--) {
+                nodes.add(routing_path.get(i-1).instance_reference);
+            }
+            return new Mx2.PathInfo(nodes);
         }
     }
 

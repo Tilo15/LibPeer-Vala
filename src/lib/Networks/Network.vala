@@ -20,6 +20,8 @@ namespace LibPeer.Networks {
 
         public abstract void send(uint8[] bytes, PeerInfo peer_info) throws IOError, Error;
 
+        public abstract bool peer_globally_routable(PeerInfo peer_info);
+
         public void send_with_stream(PeerInfo peer_info, Serialiser serialiser) throws IOError, Error {
             MemoryOutputStream stream = new MemoryOutputStream(null, GLib.realloc, GLib.free);
             serialiser(stream);

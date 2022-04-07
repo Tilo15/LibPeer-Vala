@@ -49,7 +49,14 @@ namespace LibPeer {
         }
 
         protected void inquire(Answer answer) {
-            muxer.inquire(instance, answer.instance_reference, answer.connection_methods);
+            if(!answer.query_summary.is_routed()) {
+                muxer.inquire(instance, answer.instance_reference, answer.connection_methods);
+                return;
+            }
+
+            var path = answer.query_summary.get_path_info();
+            var router = answer.query_summary.first_router;
+            muxer.inquire(instance, answer.instance_reference, router.connection_methods, path);
         }
 
         protected virtual void on_query_answer(Answer answer) {
