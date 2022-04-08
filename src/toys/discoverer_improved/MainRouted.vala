@@ -12,6 +12,7 @@ namespace Discoverer {
             var counter = 0;
             var workers = new List<DiscoverWorker>();
             var routers = new List<Router>();
+            var conduits = new List<Conduit>();
             Conduit? last_conduit = null;
             for(var i = 1; i < args.length; i++) {
                 int count = int.parse(args[1]);
@@ -30,6 +31,7 @@ namespace Discoverer {
                     workers.append(new DiscoverWorker(counter, conduit.get_interface (10, 10, 0.0f)));
                     counter++;
                 }
+                conduits.append(conduit);
             }
 
 

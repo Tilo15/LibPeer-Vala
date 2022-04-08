@@ -48,7 +48,16 @@ namespace Discoverer {
         private void query_answered(Answer answer) {
             print("[GOAL!] I received a query answer!\n");
             if(answer.query_summary.is_null_resource()) {
-                muxer.inquire(app_instance, answer.instance_reference, answer.connection_methods);
+                if(!answer.query_summary.is_routed()) {
+                    print("        Doing simple inquire\n");
+                    muxer.inquire(app_instance, answer.instance_reference, answer.connection_methods);
+                    return;
+                }
+    
+                var path = answer.query_summary.get_path_info();
+                var router = answer.query_summary.first_router;
+                print("        Doing routed inquire\n");
+                muxer.inquire(app_instance, answer.instance_reference, router.connection_methods, path);
             }
         }
 

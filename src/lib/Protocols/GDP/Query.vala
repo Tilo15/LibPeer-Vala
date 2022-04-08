@@ -67,7 +67,9 @@ namespace LibPeer.Protocols.Gdp {
 
             var private_blob_size = stream.read_uint16();
             private_blob = new uint8[private_blob_size];
-            stream.read(private_blob);
+            if(private_blob.length > 0) {
+                stream.read(private_blob);
+            }
         }
 
         internal void add_private_blob(uint8[] data, uint8[] key, uint8[] nonce) {

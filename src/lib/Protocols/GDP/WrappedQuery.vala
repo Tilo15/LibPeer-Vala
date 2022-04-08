@@ -22,7 +22,6 @@ namespace LibPeer.Protocols.Gdp {
             if(stream.read_byte() % 2 == 1) {
                 router_info = new RouterInfo.from_stream (stream);
             }
-
             query = QueryBase.new_from_stream (stream);
         }
 
@@ -57,10 +56,9 @@ namespace LibPeer.Protocols.Gdp {
 
         public RouterInfo.from_stream(DataInputStream stream) throws IOError, Error {
             instance_reference = new Mx2.InstanceReference.from_stream (stream);
-
             var qcms = stream.read_byte();
             connection_methods = new PeerInfo[qcms];
-            for(var i = 0; i > qcms; i++) {
+            for(var i = 0; i < qcms; i++) {
                 connection_methods[i] = PeerInfo.deserialise(stream);
             }
         }

@@ -17,7 +17,6 @@ namespace LibPeer.Routing {
         }
 
         protected override void forward_query(QueryBase query, InstanceReference origin) throws Error {
-            print("\t\tQuery\n");
             // Forward query normally for peers that won't require routing
             base.forward_query(query, origin);
 
@@ -30,7 +29,7 @@ namespace LibPeer.Routing {
 
             // Send to all networks except the originating network
             var network = muxer.get_target_network_for_instance(origin);
-            queue_query(query, null, network);
+            queue_query(wrapped, null, network);
         }
 
         protected override void process_answer(Answer answer) {

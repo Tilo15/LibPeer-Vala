@@ -43,6 +43,10 @@ namespace LibPeer.Protocols.Mx2 {
             .to_bytes();
         }
 
+        public string to_string() {
+            return Base64.encode(to_bytes().get_data());
+        }
+
     }
 
 }

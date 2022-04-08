@@ -32,6 +32,7 @@ namespace LibPeer.Protocols.Gdp {
         protected Instance instance;
         protected StreamTransmissionProtocol transport;
         private AsyncQueue<QueryQueueItem> query_queue = new AsyncQueue<QueryQueueItem>();
+        private int network_count = 0;
 
         public bool is_ready {
             get {
@@ -48,6 +49,7 @@ namespace LibPeer.Protocols.Gdp {
         public void add_network(Network network) {
             network.incoming_advertisment.connect(handle_advertisement);
             muxer.register_network(network);
+            network_count++;
             network.advertise(instance.reference);
         }
 
@@ -138,6 +140,7 @@ namespace LibPeer.Protocols.Gdp {
 
         private void handle_association_reply(StpInputStream stream) {
             handle_association(stream, true);
+            stream.close();
         }
 
         private void handle_association(StpInputStream stream, bool is_final = false) throws Error {
@@ -146,20 +149,24 @@ namespace LibPeer.Protocols.Gdp {
             if(is_final) {
                 add_peer(id, stream.origin, peer_info);
             }
-            if(!is_final) {
+            else {
                 var origin = stream.origin;
                 transport.initialise_stream(origin, stream.session_id).established.connect(s => {
                     serialise_association_information(origin, s);
                     stream.close();
-                    add_peer(id, stream.origin, peer_info);
+                    add_peer(id, origin, peer_info);
                 });
             }
         }
 
         private void serialise_association_information(InstanceReference origin, OutputStream stream) {
             var peer_info = muxer.get_peer_info_for_instance(origin);
-            stream.write(public_key);
-            peer_info.serialise(stream);
+            var info = new ByteComposer()
+                .add_byte_array(public_key)
+                .add_with_stream(peer_info.serialise)
+                .to_byte_array();
+
+            stream.write(info);
         }
 
         private void handle_peers(StpInputStream stream) throws Error {
@@ -170,7 +177,6 @@ namespace LibPeer.Protocols.Gdp {
             var dis = new DataInputStream(stream);
             var query = QueryBase.new_from_stream(dis);
             var summary = new QuerySummary(query);
-            
             if(!summary.validate()) {
                 return;
             }
@@ -220,7 +226,7 @@ namespace LibPeer.Protocols.Gdp {
             while(query is WrappedQuery) {
                 var wrapped = (WrappedQuery)query;
                 query = wrapped.query;
-                if(query.compare_sender(public_key)) {
+                if(wrapped.compare_sender(public_key)) {
                     forward = true;
                     break;
                 }
@@ -260,10 +266,10 @@ namespace LibPeer.Protocols.Gdp {
             var network = muxer.get_target_network_for_instance(origin);
             var peer = muxer.get_peer_info_for_instance(origin);
             if(network.peer_globally_routable(peer)) {
-                queue_query(query);
+                queue_query(wrapped);
             }
             else {
-                queue_query(query, network);
+                queue_query(wrapped, network);
             }
         }
 
@@ -314,7 +320,7 @@ namespace LibPeer.Protocols.Gdp {
                             if(!summary.has_visited(peer.key)) {
                                 send_command(peer.value, Command.QUERY, query.serialise);
                             }
-                            Posix.sleep(Random.int_range(5, 30));
+                            Posix.sleep(Random.int_range(5, 10));
                         }
                     }
                     catch (Error e) {
@@ -342,8 +348,11 @@ namespace LibPeer.Protocols.Gdp {
         private void add_peer(Bytes id, InstanceReference ir, PeerInfo info) {
             peer_info.add(info);
             peers.set(id, ir);
-            if(!queue_running) {
-                start_queue_worker();
+            lock(queue_running) {
+                if(!queue_running) {
+                    //  print(@"\t\tStart queue worker $(instance.reference) (network_count = $(network_count))\n");
+                    start_queue_worker();
+                }
             }
         }
 

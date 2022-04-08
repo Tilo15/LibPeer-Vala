@@ -82,8 +82,10 @@ namespace LibPeer.Protocols.Mx2 {
                         .add_char_array(instance.application_namespace.to_utf8())
                         .to_byte_array();
 
-                    // Create a frame containing an inquire packet
-                    var frame = new Frame(destination, instance.reference, path ?? new PathInfo.empty(), PayloadType.INQUIRE, packet);
+                        
+                        // Create a frame containing an inquire packet
+                    var path_info = path == null ? new PathInfo.empty() : path;
+                    var frame = new Frame(destination, instance.reference, path_info, PayloadType.INQUIRE, packet);
 
                     // Send using the network and peer info
                     fragmenter.send_frame(frame, instance, network, peer);
@@ -136,7 +138,7 @@ namespace LibPeer.Protocols.Mx2 {
         }
 
         protected void dispel_peer(Receiption receiption, Frame frame) throws Error {
-            print(@"Dispelling peer at $(receiption.peer_info)\n");
+            printerr(@"Dispelling peer at $(receiption.peer_info)\n");
             // Create a frame
             Frame dispel_frame = new Frame(frame.origin, frame.destination, frame.via.return_path, PayloadType.DISPEL, new uint8[0], FrameCrypto.NONE);
 
@@ -167,6 +169,8 @@ namespace LibPeer.Protocols.Mx2 {
                     dispel_peer(receiption, frame);
                     return;
             }
+
+            handle_frame(frame, receiption);
         }
 
         protected void handle_frame(Frame frame, Receiption receiption) {
@@ -223,7 +227,7 @@ namespace LibPeer.Protocols.Mx2 {
                 send_packet(instance, frame.origin, PayloadType.GREET, inquiry_id);
             }
             else {
-                print(@"$(instance.application_namespace) != $(application_namespace)\n");
+                printerr(@"$(instance.application_namespace) != $(application_namespace)\n");
             }
 
         }

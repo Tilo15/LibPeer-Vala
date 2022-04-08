@@ -9,7 +9,7 @@ namespace LibPeer.Protocols.Mx2 {
             owned get {
                 var path = repeaters.to_array();
                 var reversed = new Gee.LinkedList<InstanceReference>();
-                for(var i = reversed.size; i > 0; i++) {
+                for(var i = path.length; i > 0; i--) {
                     reversed.add(path[i-1]);
                 }
                 return new PathInfo(reversed);

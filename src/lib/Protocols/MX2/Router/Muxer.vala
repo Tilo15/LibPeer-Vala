@@ -30,17 +30,21 @@ namespace LibPeer.Protocols.Mx2 {
             }
 
             // Read the incoming frame
-            var frame = new RouterFrame.from_stream(receiption.stream);
+            var frame = new RouterFrame.from_stream(stream);
 
+            //  print(@"[RoutingMuxer] Got frame from $(frame.origin)\n");
             // Is the frame for an application on this machine?
             if(instances.has_key(frame.destination)) {
                 // This frame is for us, don't route
                 var full_frame = frame.to_full_frame(instances);
                 if(full_frame.read_status == FrameReadStatus.OK) {
+                    //  print(@"[RoutingMuxer] Handling frame normally $(frame.origin)\n");
                     handle_frame(full_frame, receiption);
                 }
                 return;
             }
+
+            //  print("[RoutingMuxer] Frame not consumed by local host\n");
 
             // Save the connection details
             save_instance_mapping(frame, receiption);
@@ -48,11 +52,14 @@ namespace LibPeer.Protocols.Mx2 {
             // Is the frame routed through us?
             if(get_instance_index(frame.via) != -1) {
                 // Yes, help it along
+                //  print("[RoutingMuxer] We are a router in this frame, find next hop\n");
                 var next_hop = get_next_hop(frame);
                 forward_frame(frame, next_hop);
+                //  print("[RoutingMuxer] Frame forwarded to next hop\n");
                 return;
             }
 
+            //  print("[RoutingMuxer] Frame discarded\n");
             // This frame has nothing to do with us
             Frame dispel_frame = new Frame(frame.origin, frame.destination, frame.via.return_path, PayloadType.DISPEL, new uint8[0], FrameCrypto.NONE);
             fragmenter.send_frame(dispel_frame, null, receiption.network, receiption.peer_info);
@@ -104,13 +111,13 @@ namespace LibPeer.Protocols.Mx2 {
 
         private void save_instance_mapping(RouterFrame frame, Networks.Receiption receiption) {
             var instance_ref = get_previous_hop(frame);
-            remote_instance_mapping.set(frame.origin, new InstanceAccessInfo() { 
+            remote_instance_mapping.set(instance_ref, new InstanceAccessInfo() { 
                 network = receiption.network,
                 peer_info = receiption.peer_info,
-                path_info = frame.via.return_path
+                path_info = new PathInfo.empty()
             });
 
-            print(@"Saved instance mapping with address $(receiption.peer_info.to_string()) due to routed frame\n");
+            //  print(@"Saved instance mapping with address $(receiption.peer_info.to_string()) due to routed frame\n");
         }
 
     }

@@ -58,6 +58,7 @@ namespace LibPeer.Util {
                 while(read_size != count && 0 != (last_read = stream.read(buffer))) {
                     read_size += last_read;
                     s.write(buffer[0:last_read]);
+                    buffer.resize(buffer.length - (int)last_read);
                 }
             });
 

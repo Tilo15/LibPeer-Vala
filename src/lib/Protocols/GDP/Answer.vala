@@ -21,7 +21,7 @@ namespace LibPeer.Protocols.Gdp {
             stream.read(challenge_pk);
 
             var signature_size = stream.read_uint16();
-            var raw_data = new uint8[signature_size];
+            raw_data = new uint8[signature_size];
             stream.read(raw_data);
 
             var data = Signing.verify(raw_data, challenge_pk);

@@ -60,7 +60,7 @@ namespace LibPeer.Protocols.Mx2 {
             // The remainder of the stream is the payload
             var data = new uint8[uint16.MAX];
             size_t bytes_read;
-            stream.read_all(payload, out bytes_read);
+            stream.read_all(data, out bytes_read);
             data.resize((int)bytes_read);
             payload = data;
         }
