@@ -130,7 +130,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
                 var segment = payload_queue.pop();
                 in_flight.set(segment.sequence_number, segment);
                 in_flight_count++;
-                outgoing_segment_queue.push(segment);
+                queue_segment(segment);
             }
 
             // Calculate a maximum time value for segments eligable to be resent

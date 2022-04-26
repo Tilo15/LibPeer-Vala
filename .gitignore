@@ -2,6 +2,7 @@
 *.p
 /lib
 /toys
+/infra
 /meson-info
 /meson-logs
 /meson-private

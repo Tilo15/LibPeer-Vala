@@ -10,6 +10,7 @@ namespace LibPeer.Protocols.Stp.Streams {
         private uint8[] unread_data;
         private Cond data_cond = Cond();
         private Mutex data_mutex = Mutex();
+        internal signal void new_data(StpInputStream stream);
 
         private int pending_data = 0;
 
@@ -31,6 +32,7 @@ namespace LibPeer.Protocols.Stp.Streams {
             pending_data --;
             data_cond.broadcast();
             data_mutex.unlock();
+            new_data(this);
             //  print("*** HANDLE DATA RETURN\n");
         }
 
@@ -39,6 +41,7 @@ namespace LibPeer.Protocols.Stp.Streams {
             data_mutex.lock();
             data_cond.broadcast();
             data_mutex.unlock();
+            new_data(this);
             //  print("*** HANDLE DATA RETURN\n");
         }
 
