@@ -267,6 +267,7 @@ namespace LibPeer.Protocols.Stp {
 
         private void send_loop() {
             // TODO: add a way to stop this
+            // TODO2: This function needs a lot of love, and to not eat up 100% of a CPU for each instance of this object.
             while(true) {
                 foreach(var session in sessions.values) {
                     if(session.has_pending_segment()) {
