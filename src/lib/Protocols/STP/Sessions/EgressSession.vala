@@ -18,6 +18,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
         private ConcurrentHashMap<uint64?, SegmentTracker> segment_trackers = new ConcurrentHashMap<uint64?, SegmentTracker>(i => (uint)i, (a, b) => a == b);
 
         private ArrayList<uint64?> segment_trips = new ArrayList<uint64?>();
+        private ThreadTimer resend_timer = null;
 
         protected AsyncQueue<Payload> payload_queue = new AsyncQueue<Payload>();
 
@@ -27,7 +28,6 @@ namespace LibPeer.Protocols.Stp.Sessions {
         private uint64 average_ping = 0;
         private uint64 worst_ping = 0;
         private int64 adjustment_delta = 0;
-        private uint64 last_send = 0;
 
         private uint64 next_sequence_number = 0;
 
@@ -40,7 +40,12 @@ namespace LibPeer.Protocols.Stp.Sessions {
             open = true;
         }
 
+        internal override void begin() {
+            queue_segments();
+        }
+
         public override void process_segment(Segment segment) {
+            print("Process segment **********\n");
             // We have received a segment from the muxer
             // Determine the segment type
             if(segment is Acknowledgement) {
@@ -123,10 +128,22 @@ namespace LibPeer.Protocols.Stp.Sessions {
             
         }
 
-        public override bool has_pending_segment() {
+        public override Segment get_pending_segment() {
+            queue_segments();
+            return base.get_pending_segment();
+        }
+
+        private void queue_segments() {
+            lock(resend_timer) {
+                if(resend_timer != null && resend_timer.running) {
+                    resend_timer.cancel();
+                }
+            }
+
             // Do we have segments to queue, and room in our window to queue them?
             if(payload_queue.length() > 0 && in_flight_count < window_size) {
                 // Yes, do it
+                print("Queuing segment from payload queue\n");
                 var segment = payload_queue.pop();
                 in_flight.set(segment.sequence_number, segment);
                 in_flight_count++;
@@ -134,7 +151,8 @@ namespace LibPeer.Protocols.Stp.Sessions {
             }
 
             // Calculate a maximum time value for segments eligable to be resent
-            uint64 max_time = (get_monotonic_time()/1000) - (uint64)(average_ping + (redundant_resends * window_size));
+            int timeout = (int)(average_ping + (redundant_resends * window_size));
+            uint64 max_time = (get_monotonic_time()/1000) - timeout;
             
             // Do we have any in-flight segments to resend?
             foreach (var segment in in_flight.values) {
@@ -149,12 +167,11 @@ namespace LibPeer.Protocols.Stp.Sessions {
                 }
             }
 
-            return base.has_pending_segment();
-        }
-
-        public override Segments.Segment get_pending_segment() {
-            last_send = get_monotonic_time() / 1000;
-            return base.get_pending_segment();
+            lock(resend_timer) {
+                // This function needs to run every so often
+                resend_timer = new ThreadTimer(timeout * 10,  queue_segments);
+                resend_timer.start();
+            }
         }
 
         private void adjust_window_size(double last, double current) {
@@ -243,6 +260,8 @@ namespace LibPeer.Protocols.Stp.Sessions {
                     next_sequence_number ++;
                 }
             }
+
+            queue_segments();
 
             // Return the tracker
             return tracker;

@@ -2,6 +2,7 @@ using LibPeer.Protocols.Mx2;
 using LibPeer.Protocols.Stp.Messages;
 using LibPeer.Protocols.Stp.Sessions;
 using LibPeer.Protocols.Stp.Streams;
+using LibPeer.Protocols.Stp.Segments;
 using LibPeer.Util;
 using Gee;
 
@@ -22,6 +23,8 @@ namespace LibPeer.Protocols.Stp {
         private ConcurrentHashMap<Bytes, Session> sessions = new ConcurrentHashMap<Bytes, Session>(k => k.hash(), (a, b) => a.compare(b) == 0);
 
         private GLib.List<Retransmitter> retransmitters = new GLib.List<Retransmitter>();
+
+        private AsyncQueue<Segment> outgoing_segment_queue = new AsyncQueue<Segment>();
 
         private Thread<void> send_thread;
 
@@ -61,13 +64,14 @@ namespace LibPeer.Protocols.Stp {
 
             // Send the request
             negotiation.request_retransmitter = new MessageRetransmitter(this, negotiation.remote_instance, session_request);
-            retransmitters.append(negotiation.request_retransmitter);
+            negotiation.request_retransmitter.begin();
 
             // Return the negotiation object
             return negotiation;
         }
 
         private void handle_packet(Packet packet) {
+            print("STP: Handle packet\n");
             // We have a message, deserialise it
             var message = Message.deserialise(packet.stream);
 
@@ -117,7 +121,7 @@ namespace LibPeer.Protocols.Stp {
 
             // Repeatedly send the negotiation
             negotiation.negotiate_retransmitter = new MessageRetransmitter(this, negotiation.remote_instance, reply);
-            retransmitters.append(negotiation.negotiate_retransmitter);
+            negotiation.negotiate_retransmitter.begin();
         }
 
         private void handle_negotiate_session(NegotiateSession message) {
@@ -197,6 +201,7 @@ namespace LibPeer.Protocols.Stp {
         }
 
         private void handle_segment_message(SegmentMessage message) {
+            print("STP: handle_segment_message\n");
             // Do we have a session open?
             if(!sessions.has_key(message.session_id)) {
                 // Skip
@@ -212,6 +217,7 @@ namespace LibPeer.Protocols.Stp {
             // Get the session
             var session = sessions.get(message.session_id);
 
+            print("STP: session.process_segment\n");
             // Give the session the segment
             session.process_segment(message.segment);
         }
@@ -245,6 +251,9 @@ namespace LibPeer.Protocols.Stp {
             // Save the session
             sessions.set(negotiation.session_id, session);
 
+            // Handle outgoing segments
+            session.has_pending_segment.connect(() => send_pending_segement(session));
+
             switch (negotiation.direction) {
                 case SessionDirection.INGRESS:
                     // Was this in reply to another session?
@@ -266,26 +275,20 @@ namespace LibPeer.Protocols.Stp {
         }
 
         private void send_loop() {
-            // TODO: add a way to stop this
-            // TODO2: This function needs a lot of love, and to not eat up 100% of a CPU for each instance of this object.
-            while(true) {
-                foreach(var session in sessions.values) {
-                    if(session.has_pending_segment()) {
-                        send_pending_segement(session);
-                    }
-                    //  if(!session.open) {
-                    //      while(session.has_pending_segment()) {
-                    //          send_pending_segement(session);
-                    //      }
-                    //      sessions.unset(new Bytes(session.identifier));
-                    //  }
-                }
-                foreach (var retransmitter in retransmitters) {
-                    if(!retransmitter.tick()) {
-                        retransmitters.remove(retransmitter);
-                    }
-                }
-            }
+            //  while(true) {
+            //      uint min_delay = 5000;
+            //      foreach (var retransmitter in retransmitters) {
+            //          if(!retransmitter.tick()) {
+            //              retransmitters.remove(retransmitter);
+            //          }
+            //          else if(retransmitter.interval < min_delay) {
+            //              min_delay = retransmitter.interval;
+            //          }
+            //      }
+            //      print("Waiting\n");
+            //      Posix.usleep(min_delay * 1000);
+            //      print("Continue\n");
+            //  }
         }
 
         private void send_pending_segement(Session session) {
@@ -293,8 +296,10 @@ namespace LibPeer.Protocols.Stp {
             var message = new SegmentMessage(new Bytes(session.identifier), segment);
             try {
                 send_packet(session.target, s => message.serialise(s));
+                print("Send pending segment\n");
             }
             catch (Error e) {
+                print("Faulure\n");
                 session.segment_failure(segment, e);
             }
         }
@@ -321,12 +326,11 @@ namespace LibPeer.Protocols.Stp {
                 }
             }
     
-            public MessageRetransmitter(StreamTransmissionProtocol stp, InstanceReference target, Message message, uint64 interval = 10000, int repeat = 12) {
+            public MessageRetransmitter(StreamTransmissionProtocol stp, InstanceReference target, Message message, int interval = 10000, int repeat = 12) {
+                base(interval, repeat);
                 this.stp = stp;
                 this.target = target;
                 this.message = message;
-                this.ttl = repeat;
-                this.interval = interval;
             }
         }
     }

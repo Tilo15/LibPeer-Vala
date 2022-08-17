@@ -9,7 +9,7 @@ namespace LibPeer.Protocols.Stp.Sessions {
         public const int64 HEARTBEAT_INTERVAL = 60;
         public const int64 HEARTBEAT_TIMEOUT = 330;
 
-        protected AsyncQueue<Segment> outgoing_segment_queue = new AsyncQueue<Segment>();
+        private AsyncQueue<Segment> outgoing_segment_queue = new AsyncQueue<Segment>();
 
         private int64 last_heartbeat = 0;
         private Thread<bool> heart;
@@ -33,16 +33,20 @@ namespace LibPeer.Protocols.Stp.Sessions {
             heart = new Thread<bool>("STP Session Heartbeat", heartbeat);
         }
 
-        public virtual bool has_pending_segment() {
-            return outgoing_segment_queue.length() > 0;
-        }
+        public signal void has_pending_segment();
 
         public virtual Segment get_pending_segment() {
-            return outgoing_segment_queue.pop();
+            print("Popping segment\n");
+            var s = outgoing_segment_queue.pop();
+            print("Segment popped\n");
+            return s;
         }
 
         protected void queue_segment(Segment segment) {
+            print("Queued segment\n");
             outgoing_segment_queue.push(segment);
+            print("Notified about queued segment\n");
+            has_pending_segment();
         }
 
         public virtual void segment_failure(Segment segment, Error error) {
@@ -80,6 +84,8 @@ namespace LibPeer.Protocols.Stp.Sessions {
         private int64 get_heartbeat_timestamp() {
             return get_monotonic_time()/1000000;
         }
+
+        internal virtual void begin() {}
     }
 
 }

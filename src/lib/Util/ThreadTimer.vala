@@ -15,6 +15,12 @@ namespace LibPeer.Util {
         
         private int timeout;
         private TimerFunc timer_func;
+
+        public bool is_canceled {
+            get {
+                return has_been_canceled;
+            }
+        }
     
 
         public ThreadTimer(int timeout, TimerFunc timer_func) {
