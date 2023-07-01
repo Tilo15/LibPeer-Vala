@@ -36,16 +36,15 @@ namespace LibPeer.Protocols.Stp.Sessions {
         public signal void has_pending_segment();
 
         public virtual Segment get_pending_segment() {
-            print("Popping segment\n");
-            var s = outgoing_segment_queue.pop();
-            print("Segment popped\n");
-            return s;
+            return outgoing_segment_queue.pop();
+        }
+
+        protected bool segment_queue_is_clear() {
+            return outgoing_segment_queue.length() == 0;
         }
 
         protected void queue_segment(Segment segment) {
-            print("Queued segment\n");
             outgoing_segment_queue.push(segment);
-            print("Notified about queued segment\n");
             has_pending_segment();
         }
 

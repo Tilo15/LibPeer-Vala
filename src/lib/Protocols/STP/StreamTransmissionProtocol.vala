@@ -24,7 +24,7 @@ namespace LibPeer.Protocols.Stp {
 
         private GLib.List<Retransmitter> retransmitters = new GLib.List<Retransmitter>();
 
-        private AsyncQueue<Segment> outgoing_segment_queue = new AsyncQueue<Segment>();
+        private AsyncQueue<Session> outgoing_segment_queue = new AsyncQueue<Session>();
 
         private Thread<void> send_thread;
 
@@ -71,7 +71,6 @@ namespace LibPeer.Protocols.Stp {
         }
 
         private void handle_packet(Packet packet) {
-            print("STP: Handle packet\n");
             // We have a message, deserialise it
             var message = Message.deserialise(packet.stream);
 
@@ -150,7 +149,8 @@ namespace LibPeer.Protocols.Stp {
             var reply = new BeginSession(negotiation.session_id, message.timing);
 
             // Send the reply
-            this.retransmitters.append(new MessageRetransmitter(this, negotiation.remote_instance, reply));
+            var retrans = new MessageRetransmitter(this, negotiation.remote_instance, reply);
+            retrans.begin();
 
             // Make sure the negotiation is in the right state
             if(negotiation.state != NegotiationState.REQUESTED) {
@@ -201,7 +201,6 @@ namespace LibPeer.Protocols.Stp {
         }
 
         private void handle_segment_message(SegmentMessage message) {
-            print("STP: handle_segment_message\n");
             // Do we have a session open?
             if(!sessions.has_key(message.session_id)) {
                 // Skip
@@ -217,7 +216,6 @@ namespace LibPeer.Protocols.Stp {
             // Get the session
             var session = sessions.get(message.session_id);
 
-            print("STP: session.process_segment\n");
             // Give the session the segment
             session.process_segment(message.segment);
         }
@@ -276,18 +274,8 @@ namespace LibPeer.Protocols.Stp {
 
         private void send_loop() {
             //  while(true) {
-            //      uint min_delay = 5000;
-            //      foreach (var retransmitter in retransmitters) {
-            //          if(!retransmitter.tick()) {
-            //              retransmitters.remove(retransmitter);
-            //          }
-            //          else if(retransmitter.interval < min_delay) {
-            //              min_delay = retransmitter.interval;
-            //          }
-            //      }
-            //      print("Waiting\n");
-            //      Posix.usleep(min_delay * 1000);
-            //      print("Continue\n");
+            //      var session = outgoing_segment_queue.pop();
+            //      send_pending_segement(session);
             //  }
         }
 
@@ -296,10 +284,8 @@ namespace LibPeer.Protocols.Stp {
             var message = new SegmentMessage(new Bytes(session.identifier), segment);
             try {
                 send_packet(session.target, s => message.serialise(s));
-                print("Send pending segment\n");
             }
             catch (Error e) {
-                print("Faulure\n");
                 session.segment_failure(segment, e);
             }
         }

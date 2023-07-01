@@ -36,7 +36,9 @@ namespace Discoverer {
 
 
 
-            while(true) {};
+            while(true) {
+                Posix.sleep(60);
+            };
 
             return 0;
         }

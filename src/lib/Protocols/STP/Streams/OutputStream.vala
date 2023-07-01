@@ -23,7 +23,7 @@ namespace LibPeer.Protocols.Stp.Streams {
         public override bool close (GLib.Cancellable? cancellable) {
             sendop_mutex.lock();
             while(send_operations != 0) {
-                print("[STP] Waiting for operations to complete before closing stream\n");
+                printerr("[STP] Waiting for operations to complete before closing stream\n");
                 sendop_cond.wait(sendop_mutex);
             }
             session.close();

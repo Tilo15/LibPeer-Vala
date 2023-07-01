@@ -53,7 +53,7 @@ namespace LibPeer.Networks.Simulation {
 
                     // Drop
                     if (Random.int_range(1, 100) == loss_frac * 100) {
-                        print("[NET] Drop!\n");
+                        printerr("[NET] Drop!\n");
                         continue;
                     }
 

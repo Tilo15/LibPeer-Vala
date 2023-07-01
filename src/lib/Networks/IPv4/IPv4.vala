@@ -268,10 +268,10 @@ namespace LibPeer.Networks.IPv4 {
 
         private void inquire(InetAddress address, int port) {
             if(!address_allowed(address)) {
-                print(@"Not sending IPv4 inquiry for instances to $(address.to_string()):$(port) as network has been set to local-only mode\n");
+                printerr(@"Not sending IPv4 inquiry for instances to $(address.to_string()):$(port) as network has been set to local-only mode\n");
                 return;
             }
-            print(@"Sending IPv4 inquiry for instances to $(address.to_string()):$(port)\n");
+            printerr(@"Sending IPv4 inquiry for instances to $(address.to_string()):$(port)\n");
             socket.send_to(new InetSocketAddress(address, (uint16)port), new uint8[] { DGRAM_INQUIRE });
         }
 

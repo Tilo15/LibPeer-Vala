@@ -23,7 +23,6 @@ namespace LibPeer.Protocols.Stp {
         }
 
         private void tick() {
-            print("Tick\n");
             if(timer.is_canceled) {
                 return;
             }
@@ -32,7 +31,6 @@ namespace LibPeer.Protocols.Stp {
                 if(ttl > 0) {
                     ttl--;
                 }
-                print("Do Task\n");
                 do_task();
                 last_called = get_monotonic_time();
 
@@ -48,6 +46,10 @@ namespace LibPeer.Protocols.Stp {
         protected abstract void do_task();
 
         public void cancel() {
+            timer.cancel();
+        }
+
+        ~ Retransmitter() {
             timer.cancel();
         }
 

@@ -3,6 +3,7 @@ dependencies = [
     dependency('gobject-2.0'),
     dependency('gio-2.0'),
     dependency('gee-0.8'),
+    meson.get_compiler('vala').find_library('posix'),
     libpeer_dep
 ]
 

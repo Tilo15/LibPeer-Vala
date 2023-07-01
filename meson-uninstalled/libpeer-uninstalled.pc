@@ -1,7 +1,7 @@
 prefix=/home/bbarrow/Projects/LibPeer-Vala
-srcdir=/home/bbarrow/Projects/LibPeer-Vala/src
-libdir=${prefix}/lib64
 includedir=${prefix}/include
+libdir=${prefix}/lib64
+srcdir=/home/bbarrow/Projects/LibPeer-Vala/src
 
 Name: libpeer
 Description: LibPeer: libpeer

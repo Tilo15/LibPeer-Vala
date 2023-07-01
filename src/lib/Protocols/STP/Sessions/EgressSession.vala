@@ -45,7 +45,6 @@ namespace LibPeer.Protocols.Stp.Sessions {
         }
 
         public override void process_segment(Segment segment) {
-            print("Process segment **********\n");
             // We have received a segment from the muxer
             // Determine the segment type
             if(segment is Acknowledgement) {
@@ -143,7 +142,6 @@ namespace LibPeer.Protocols.Stp.Sessions {
             // Do we have segments to queue, and room in our window to queue them?
             if(payload_queue.length() > 0 && in_flight_count < window_size) {
                 // Yes, do it
-                print("Queuing segment from payload queue\n");
                 var segment = payload_queue.pop();
                 in_flight.set(segment.sequence_number, segment);
                 in_flight_count++;
@@ -168,6 +166,9 @@ namespace LibPeer.Protocols.Stp.Sessions {
             }
 
             lock(resend_timer) {
+                if(in_flight.size == 0 && payload_queue.length() == 0) {
+                    return;
+                }
                 // This function needs to run every so often
                 resend_timer = new ThreadTimer(timeout * 10,  queue_segments);
                 resend_timer.start();
